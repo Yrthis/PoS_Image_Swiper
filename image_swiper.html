@@ -1,0 +1,1482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Image Swiper</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --panel-2: #1f2937;
+      --panel-3: #0b1220;
+      --text: #f8fafc;
+      --muted: #94a3b8;
+      --green: #22c55e;
+      --red: #ef4444;
+      --blue: #38bdf8;
+      --amber: #f59e0b;
+      --shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+      --radius: 24px;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1e293b 0%, var(--bg) 45%);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .app {
+      max-width: 1380px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 420px minmax(340px, 1fr);
+      gap: 24px;
+      align-items: start;
+      transition: grid-template-columns 0.22s ease;
+    }
+
+    .app.sidebar-collapsed {
+      grid-template-columns: 0 minmax(340px, 1fr);
+    }
+
+    .panel {
+      background: rgba(17, 24, 39, 0.86);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: var(--radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+      min-width: 0;
+      overflow: hidden;
+      transition: opacity 0.18s ease, transform 0.18s ease, padding 0.18s ease;
+    }
+
+    .app.sidebar-collapsed .panel.controls {
+      opacity: 0;
+      transform: translateX(-12px);
+      pointer-events: none;
+      padding: 0;
+      border-width: 0;
+      box-shadow: none;
+    }
+
+    .controls {
+      display: grid;
+      gap: 16px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.7rem;
+    }
+
+    h2, h3 {
+      margin: 0;
+    }
+
+    p, li {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    .section {
+      display: grid;
+      gap: 10px;
+      padding: 14px;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 18px;
+    }
+
+    .section-title {
+      font-size: 0.98rem;
+      font-weight: 800;
+      color: #e2e8f0;
+    }
+
+    .file-input, .text-input, .textarea {
+      display: block;
+      width: 100%;
+      padding: 12px 14px;
+      background: var(--panel-2);
+      border-radius: 14px;
+      border: 1px solid rgba(255,255,255,0.08);
+      color: var(--text);
+      font: inherit;
+    }
+
+    .textarea {
+      min-height: 88px;
+      resize: vertical;
+    }
+
+    .button-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 16px;
+      font-size: 0.95rem;
+      cursor: pointer;
+      transition: transform 0.16s ease, opacity 0.16s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .primary { background: var(--blue); color: #082f49; font-weight: 700; }
+    .danger { background: rgba(239, 68, 68, 0.18); color: #fecaca; border: 1px solid rgba(239, 68, 68, 0.35); }
+    .success { background: rgba(34, 197, 94, 0.18); color: #bbf7d0; border: 1px solid rgba(34, 197, 94, 0.35); }
+    .ghost { background: rgba(255,255,255,0.08); color: var(--text); }
+    .info { background: rgba(56, 189, 248, 0.16); color: #dbeafe; border: 1px solid rgba(56, 189, 248, 0.3); }
+    .warn { background: rgba(245, 158, 11, 0.16); color: #fde68a; border: 1px solid rgba(245, 158, 11, 0.28); }
+
+    .status {
+      font-size: 0.95rem;
+      min-height: 22px;
+      color: #cbd5e1;
+    }
+
+    .helper {
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin: 0;
+    }
+
+    .sample {
+      background: var(--panel-2);
+      border-radius: 16px;
+      padding: 14px;
+      overflow: auto;
+      font-size: 0.88rem;
+      white-space: pre-wrap;
+      color: #dbeafe;
+      border: 1px solid rgba(255,255,255,0.07);
+      margin: 0;
+    }
+
+    .meta-box, .results {
+      display: grid;
+      gap: 8px;
+    }
+
+    .meta-item, .results-item {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(255,255,255,0.05);
+      font-size: 0.92rem;
+    }
+
+    .meta-item small, .results-item small { color: var(--muted); }
+
+    .dropzone {
+      border: 2px dashed rgba(56, 189, 248, 0.35);
+      background: rgba(56, 189, 248, 0.06);
+      border-radius: 18px;
+      padding: 18px;
+      text-align: center;
+      transition: background 0.18s ease, border-color 0.18s ease, transform 0.18s ease;
+    }
+
+    .dropzone.active {
+      background: rgba(56, 189, 248, 0.14);
+      border-color: rgba(56, 189, 248, 0.7);
+      transform: scale(1.01);
+    }
+
+    .inline-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stage {
+      min-height: 760px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+      min-width: 0;
+    }
+
+    .stage-topbar {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    .stack-wrap {
+      position: sticky;
+      top: 24px;
+    }
+
+    .stack {
+      position: relative;
+      width: min(100%, 760px);
+      min-height: 720px;
+      margin: 0 auto;
+    }
+
+    .card {
+      position: absolute;
+      inset: 0;
+      border-radius: 32px;
+      overflow: hidden;
+      background: linear-gradient(180deg, #0f172a 0%, #020617 100%);
+      box-shadow: var(--shadow);
+      touch-action: none;
+      user-select: none;
+      border: 1px solid rgba(255,255,255,0.08);
+      transform-origin: center center;
+      transition: transform 0.24s ease, opacity 0.24s ease;
+      cursor: grab;
+    }
+
+    .card.dragging {
+      transition: none;
+      cursor: grabbing;
+    }
+
+    .card-bg {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #020617;
+    }
+
+    .crop-frame {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #0b1120;
+    }
+
+    .crop-frame img {
+      position: absolute;
+      top: 0;
+      left: 0;
+      max-width: none;
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
+    }
+
+    .gradient {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(0,0,0,0.04) 10%, rgba(0,0,0,0.62) 100%);
+      pointer-events: none;
+    }
+
+    .badge {
+      position: absolute;
+      top: 24px;
+      padding: 16px 22px;
+      border-radius: 18px;
+      font-size: 1.6rem;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      border: 4px solid currentColor;
+      opacity: 0;
+      transition: opacity 0.18s ease;
+      text-transform: uppercase;
+      background: rgba(0,0,0,0.2);
+    }
+
+    .badge.left { left: 24px; color: #fca5a5; transform: rotate(-14deg); }
+    .badge.right { right: 24px; color: #86efac; transform: rotate(14deg); }
+
+    .card-meta {
+      position: absolute;
+      left: 24px;
+      right: 24px;
+      bottom: 24px;
+      z-index: 2;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: end;
+    }
+
+    .title {
+      font-size: 1.9rem;
+      font-weight: 800;
+      margin: 0 0 6px;
+    }
+
+    .location {
+      font-size: 1rem;
+      color: #e2e8f0;
+      margin: 0;
+    }
+
+    .counter {
+      background: rgba(15, 23, 42, 0.75);
+      padding: 10px 14px;
+      border-radius: 999px;
+      font-weight: 700;
+      color: #e2e8f0;
+      border: 1px solid rgba(255,255,255,0.12);
+      white-space: nowrap;
+    }
+
+    .empty-state, .editor-shell {
+      display: grid;
+      place-items: center;
+      min-height: 720px;
+      border-radius: 32px;
+      border: 1px dashed rgba(255,255,255,0.18);
+      background: rgba(2, 6, 23, 0.45);
+      text-align: center;
+      padding: 24px;
+    }
+
+    .editor-shell {
+      place-items: stretch;
+      background: rgba(2, 6, 23, 0.7);
+      border-style: solid;
+      padding: 18px;
+      gap: 16px;
+    }
+
+    .editor-header {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: start;
+      text-align: left;
+    }
+
+    .editor-subtitle {
+      margin: 4px 0 0;
+      color: var(--muted);
+    }
+
+    .editor-workspace {
+      display: grid;
+      place-items: center;
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 24px;
+      min-height: 560px;
+      padding: 16px;
+      overflow: auto;
+    }
+
+    .editor-image-wrap {
+      position: relative;
+      display: inline-block;
+      max-width: 100%;
+      max-height: 72vh;
+      line-height: 0;
+    }
+
+    .editor-image-wrap img {
+      display: block;
+      max-width: min(100%, 720px);
+      max-height: 68vh;
+      width: auto;
+      height: auto;
+      border-radius: 18px;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .editor-overlay {
+      position: absolute;
+      inset: 0;
+      border-radius: 18px;
+      cursor: crosshair;
+      overflow: hidden;
+      touch-action: none;
+      background: rgba(0, 0, 0, 0.18);
+    }
+
+    .selection {
+      position: absolute;
+      border: 2px solid #38bdf8;
+      background: rgba(56, 189, 248, 0.16);
+      box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.35);
+      cursor: move;
+    }
+
+    .selection-label {
+      position: absolute;
+      top: -34px;
+      left: 0;
+      background: rgba(15, 23, 42, 0.92);
+      color: #e0f2fe;
+      border-radius: 10px;
+      padding: 6px 10px;
+      font-size: 0.82rem;
+      white-space: nowrap;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+
+    .handle {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      background: #e0f2fe;
+      border: 2px solid #0f172a;
+    }
+
+    .handle.nw { top: -7px; left: -7px; cursor: nwse-resize; }
+    .handle.ne { top: -7px; right: -7px; cursor: nesw-resize; }
+    .handle.sw { bottom: -7px; left: -7px; cursor: nesw-resize; }
+    .handle.se { bottom: -7px; right: -7px; cursor: nwse-resize; }
+
+    .editor-hint, .hint {
+      text-align: center;
+      color: var(--muted);
+      margin: 0;
+      font-size: 0.95rem;
+    }
+
+    @media (max-width: 1080px) {
+      .app { grid-template-columns: 1fr; }
+      .app.sidebar-collapsed { grid-template-columns: 1fr; }
+      .stack-wrap { position: static; }
+      .stack { min-height: 560px; }
+      .empty-state, .editor-shell { min-height: 560px; }
+      .stage { min-height: auto; }
+      .editor-header { flex-direction: column; }
+      .inline-grid { grid-template-columns: 1fr; }
+      .editor-image-wrap img { max-width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <section class="panel controls">
+      <div>
+        <div class="button-row" style="justify-content: space-between; align-items: center; margin-bottom: 8px;">
+          <h1 style="margin:0;">Image Swiper</h1>
+          <button id="toggleSidebarBtn" class="ghost" type="button">Hide options</button>
+        </div>
+        <p>Load JSON, swipe cards, edit crop/name/location, and add new images from URLs or local files. Export the updated JSON when you're done.</p>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Load dataset</div>
+        <input id="jsonFile" class="file-input" type="file" accept="application/json,.json" />
+        <p class="helper">The JSON can contain normal image URLs or data URLs for local images.</p>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Swipe controls</div>
+        <div class="button-row">
+          <button id="swipeLeftBtn" class="danger" disabled>Swipe left</button>
+          <button id="swipeRightBtn" class="success" disabled>Swipe right</button>
+          <button id="resetBtn" class="ghost" disabled>Reset deck</button>
+        </div>
+        <p class="helper">Arrow left/right also work. Press E to edit the crop for the current item.</p>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Current item details</div>
+        <div class="inline-grid">
+          <input id="nameInput" class="text-input" type="text" placeholder="Name" disabled />
+          <input id="locationInput" class="text-input" type="text" placeholder="Location" disabled />
+        </div>
+        <div class="button-row">
+          <button id="saveDetailsBtn" class="primary" disabled>Save details</button>
+          <button id="editCropBtn" class="info" disabled>Edit crop</button>
+          <button id="saveCropBtn" class="warn" disabled>Save crop</button>
+          <button id="cancelCropBtn" class="ghost" disabled>Cancel crop</button>
+        </div>
+        <div id="metaBox" class="meta-box"></div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Add by image link</div>
+        <input id="linkInput" class="text-input" type="url" placeholder="https://example.com/image.jpg" />
+        <div class="inline-grid">
+          <input id="newNameInput" class="text-input" type="text" placeholder="Optional name" />
+          <input id="newLocationInput" class="text-input" type="text" placeholder="Optional location" />
+        </div>
+        <div class="button-row">
+          <button id="addLinkBtn" class="primary">Add from link</button>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Add local images</div>
+        <input id="imageFiles" class="file-input" type="file" accept="image/*" multiple />
+        <div id="dropzone" class="dropzone">
+          <strong>Drag and drop image files here</strong>
+          <p class="helper" style="margin:8px 0 0;">Dropped files are converted to data URLs so they can be saved back into the exported JSON.</p>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Export</div>
+        <div class="button-row">
+          <button id="downloadDataBtn" class="primary" disabled>Download updated JSON</button>
+          <button id="downloadResultsBtn" class="ghost" disabled>Download swipe results</button>
+        </div>
+        <div id="status" class="status">Load a JSON file to begin.</div>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Expected JSON format</div>
+        <pre class="sample">[
+  {
+    "link": "https://example.com/image-1.jpg",
+    "crop": { "x": 120, "y": 80, "width": 900, "height": 1200 },
+    "name": "Example Place",
+    "location": "Berlin, Germany"
+  }
+]</pre>
+      </div>
+
+      <div class="section">
+        <div class="section-title">Recent decisions</div>
+        <div id="results" class="results"></div>
+      </div>
+    </section>
+
+    <section class="stage stack-wrap">
+      <div class="stage-topbar">
+        <button id="toggleSidebarBtnStage" class="ghost" type="button">Hide options</button>
+      </div>
+      <div id="stack" class="stack">
+        <div class="empty-state">
+          <div>
+            <h2 style="margin-top:0;">No data loaded</h2>
+            <p>Select a JSON file or start adding images manually.</p>
+          </div>
+        </div>
+      </div>
+      <p id="stageHint" class="hint">Load a dataset or add images to begin.</p>
+    </section>
+  </div>
+
+  <script>
+    const MIN_CROP_SIZE = 20;
+
+    const state = {
+      items: [],
+      currentIndex: 0,
+      decisions: [],
+      drag: {
+        active: false,
+        startX: 0,
+        startY: 0,
+        x: 0,
+        y: 0,
+        pointerId: null
+      },
+      edit: {
+        active: false,
+        itemIndex: null,
+        crop: null,
+        imageEl: null,
+        overlayEl: null,
+        selectionEl: null,
+        pointerId: null,
+        interaction: null
+      }
+    };
+
+    const stack = document.getElementById('stack');
+    const statusEl = document.getElementById('status');
+    const resultsEl = document.getElementById('results');
+    const metaBox = document.getElementById('metaBox');
+    const stageHint = document.getElementById('stageHint');
+    const jsonFile = document.getElementById('jsonFile');
+    const swipeLeftBtn = document.getElementById('swipeLeftBtn');
+    const swipeRightBtn = document.getElementById('swipeRightBtn');
+    const editCropBtn = document.getElementById('editCropBtn');
+    const saveCropBtn = document.getElementById('saveCropBtn');
+    const cancelCropBtn = document.getElementById('cancelCropBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const downloadDataBtn = document.getElementById('downloadDataBtn');
+    const downloadResultsBtn = document.getElementById('downloadResultsBtn');
+    const nameInput = document.getElementById('nameInput');
+    const locationInput = document.getElementById('locationInput');
+    const saveDetailsBtn = document.getElementById('saveDetailsBtn');
+    const linkInput = document.getElementById('linkInput');
+    const newNameInput = document.getElementById('newNameInput');
+    const newLocationInput = document.getElementById('newLocationInput');
+    const addLinkBtn = document.getElementById('addLinkBtn');
+    const imageFiles = document.getElementById('imageFiles');
+    const dropzone = document.getElementById('dropzone');
+    const appEl = document.querySelector('.app');
+    const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+    const toggleSidebarBtnStage = document.getElementById('toggleSidebarBtnStage');
+
+    jsonFile.addEventListener('change', handleJsonFile);
+    swipeLeftBtn.addEventListener('click', () => commitSwipe('left'));
+    swipeRightBtn.addEventListener('click', () => commitSwipe('right'));
+    editCropBtn.addEventListener('click', enterCropEditMode);
+    saveCropBtn.addEventListener('click', saveCrop);
+    cancelCropBtn.addEventListener('click', cancelCropEdit);
+    resetBtn.addEventListener('click', resetDeck);
+    downloadDataBtn.addEventListener('click', downloadData);
+    downloadResultsBtn.addEventListener('click', downloadResults);
+    saveDetailsBtn.addEventListener('click', saveCurrentDetails);
+    addLinkBtn.addEventListener('click', handleAddLink);
+    imageFiles.addEventListener('change', handleLocalFilesSelection);
+    window.addEventListener('resize', () => {
+      if (state.edit.active) updateEditorSelection();
+    });
+
+    window.addEventListener('keydown', (event) => {
+      if (!state.items.length || state.currentIndex >= state.items.length) return;
+      if (state.edit.active) return;
+      if (event.key === 'ArrowLeft') commitSwipe('left');
+      if (event.key === 'ArrowRight') commitSwipe('right');
+      if (event.key.toLowerCase() === 'e') enterCropEditMode();
+    });
+
+    setupDropzone();
+    toggleSidebarBtn.addEventListener('click', toggleSidebar);
+    toggleSidebarBtnStage.addEventListener('click', toggleSidebar);
+    render();
+
+    async function handleJsonFile(event) {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text);
+        validateItems(parsed);
+        state.items = parsed.map(normalizeItem);
+        state.currentIndex = 0;
+        state.decisions = [];
+        exitEditMode(false);
+        statusEl.textContent = `Loaded ${parsed.length} item${parsed.length === 1 ? '' : 's'}.`;
+        render();
+      } catch (error) {
+        console.error(error);
+        state.items = [];
+        state.currentIndex = 0;
+        state.decisions = [];
+        exitEditMode(false);
+        statusEl.textContent = `Could not load JSON: ${error.message}`;
+        render();
+      }
+    }
+
+    function validateItems(items) {
+      if (!Array.isArray(items)) throw new Error('JSON root must be an array.');
+
+      items.forEach((item, index) => {
+        if (!item || typeof item !== 'object') throw new Error(`Item ${index} must be an object.`);
+        if (typeof item.link !== 'string' || !item.link.trim()) throw new Error(`Item ${index} is missing a valid "link".`);
+        if (typeof item.name !== 'string') throw new Error(`Item ${index} is missing a valid "name".`);
+        if (typeof item.location !== 'string') throw new Error(`Item ${index} is missing a valid "location".`);
+        if (!item.crop || typeof item.crop !== 'object') throw new Error(`Item ${index} is missing a valid "crop" object.`);
+        ['x', 'y', 'width', 'height'].forEach((key) => {
+          if (typeof item.crop[key] !== 'number' || Number.isNaN(item.crop[key])) {
+            throw new Error(`Item ${index} crop.${key} must be a number.`);
+          }
+        });
+      });
+    }
+
+    function normalizeItem(item) {
+      return {
+        link: item.link,
+        crop: normalizeCrop(item.crop),
+        name: String(item.name ?? ''),
+        location: String(item.location ?? '')
+      };
+    }
+
+    function getActiveItemIndex() {
+      if (state.edit.active && state.edit.itemIndex != null) return state.edit.itemIndex;
+      if (state.currentIndex < state.items.length) return state.currentIndex;
+      return null;
+    }
+
+    function getActiveItem() {
+      const index = getActiveItemIndex();
+      return index == null ? null : state.items[index];
+    }
+
+    function updateButtons() {
+      const hasItems = state.items.length > 0;
+      const activeIndex = getActiveItemIndex();
+      const hasActiveItem = activeIndex != null;
+      const editing = state.edit.active;
+
+      swipeLeftBtn.disabled = !hasActiveItem || editing;
+      swipeRightBtn.disabled = !hasActiveItem || editing;
+      editCropBtn.disabled = !hasActiveItem || editing;
+      saveCropBtn.disabled = !editing;
+      cancelCropBtn.disabled = !editing;
+      resetBtn.disabled = !hasItems;
+      downloadDataBtn.disabled = !hasItems;
+      downloadResultsBtn.disabled = !state.decisions.length;
+      nameInput.disabled = !hasActiveItem;
+      locationInput.disabled = !hasActiveItem;
+      saveDetailsBtn.disabled = !hasActiveItem;
+
+      const collapsed = appEl.classList.contains('sidebar-collapsed');
+      toggleSidebarBtn.textContent = collapsed ? 'Show options' : 'Hide options';
+      toggleSidebarBtnStage.textContent = collapsed ? 'Show options' : 'Hide options';
+    }
+
+    function populateDetailsForm() {
+      const item = getActiveItem();
+      if (!item) {
+        nameInput.value = '';
+        locationInput.value = '';
+        return;
+      }
+      nameInput.value = item.name;
+      locationInput.value = item.location;
+    }
+
+    function render() {
+      stack.innerHTML = '';
+      renderResults();
+      renderMeta();
+      populateDetailsForm();
+
+      if (!state.items.length) {
+        stageHint.textContent = 'Load a dataset or add images to begin.';
+        stack.innerHTML = `
+          <div class="empty-state">
+            <div>
+              <h2 style="margin-top:0;">No data loaded</h2>
+              <p>Select a JSON file or start adding images manually.</p>
+            </div>
+          </div>
+        `;
+        updateButtons();
+        return;
+      }
+
+      if (state.edit.active) {
+        renderEditor();
+        updateButtons();
+        return;
+      }
+
+      if (state.currentIndex >= state.items.length) {
+        stageHint.textContent = 'Everything has been reviewed. You can still edit exported data by resetting the deck or downloading the JSON now.';
+        stack.innerHTML = `
+          <div class="empty-state">
+            <div>
+              <h2 style="margin-top:0;">Finished</h2>
+              <p>You reviewed all ${state.items.length} item${state.items.length === 1 ? '' : 's'}.</p>
+            </div>
+          </div>
+        `;
+        updateButtons();
+        return;
+      }
+
+      stageHint.textContent = 'Drag the top card, or use the buttons / arrow keys. Press E to edit the crop for the current item.';
+      const visibleItems = state.items.slice(state.currentIndex, state.currentIndex + 3);
+
+      visibleItems.reverse().forEach((item, reverseIndex) => {
+        const actualIndex = state.currentIndex + (visibleItems.length - 1 - reverseIndex);
+        const depth = visibleItems.length - 1 - reverseIndex;
+        const isTop = actualIndex === state.currentIndex;
+        const card = createCard(item, actualIndex, depth, isTop);
+        stack.appendChild(card);
+      });
+
+      updateButtons();
+    }
+
+    function renderMeta() {
+      metaBox.innerHTML = '';
+      const item = getActiveItem();
+      const activeIndex = getActiveItemIndex();
+
+      if (!item || activeIndex == null) {
+        metaBox.innerHTML = '<p style="margin:0; color: var(--muted);">No active item selected.</p>';
+        return;
+      }
+
+      const crop = state.edit.active ? state.edit.crop : item.crop;
+      metaBox.innerHTML = `
+        <div class="meta-item">
+          <span><strong>${escapeHtml(item.name || '(untitled)')}</strong><br><small>${escapeHtml(item.location || '(no location)')}</small></span>
+          <span>${activeIndex + 1} / ${state.items.length}</span>
+        </div>
+        <div class="meta-item">
+          <span>Crop</span>
+          <span><small>x:${crop.x} y:${crop.y} w:${crop.width} h:${crop.height}</small></span>
+        </div>
+      `;
+    }
+
+    function createCard(item, index, depth, isTop) {
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.style.transform = `scale(${1 - depth * 0.035}) translateY(${depth * 12}px)`;
+      card.style.opacity = String(1 - depth * 0.14);
+      card.style.zIndex = String(100 - depth);
+
+      card.innerHTML = `
+        <div class="card-bg">
+          <div class="crop-frame">
+            <img alt="${escapeHtml(item.name || 'Image')}" src="${escapeAttribute(item.link)}" />
+          </div>
+          <div class="gradient"></div>
+        </div>
+        <div class="badge left">Pass</div>
+        <div class="badge right">Smash!</div>
+        <div class="card-meta">
+          <div>
+            <h2 class="title">${escapeHtml(item.name || '(untitled)')}</h2>
+            <p class="location">${escapeHtml(item.location || '(no location)')}</p>
+          </div>
+          <div class="counter">${index + 1} / ${state.items.length}</div>
+        </div>
+      `;
+
+      const img = card.querySelector('img');
+      const cropFrame = card.querySelector('.crop-frame');
+      const leftBadge = card.querySelector('.badge.left');
+      const rightBadge = card.querySelector('.badge.right');
+
+      img.addEventListener('load', () => applyCrop(img, cropFrame, item.crop));
+      img.addEventListener('error', () => {
+        statusEl.textContent = `Image failed to load: ${item.link}`;
+      });
+
+      if (isTop) {
+        setupDrag(card, leftBadge, rightBadge);
+      } else {
+        card.setAttribute('aria-hidden', 'true');
+      }
+
+      return card;
+    }
+
+    function applyCrop(img, frame, crop) {
+      const frameRect = frame.getBoundingClientRect();
+      const frameW = frameRect.width || 520;
+      const frameH = frameRect.height || 720;
+      const cropW = Math.max(1, crop.width);
+      const cropH = Math.max(1, crop.height);
+
+      const scale = Math.min(frameW / cropW, frameH / cropH);
+      const scaledCropW = cropW * scale;
+      const scaledCropH = cropH * scale;
+      const offsetX = (frameW - scaledCropW) / 2;
+      const offsetY = (frameH - scaledCropH) / 2;
+
+      img.style.width = `${img.naturalWidth * scale}px`;
+      img.style.height = `${img.naturalHeight * scale}px`;
+      img.style.left = `${offsetX - crop.x * scale}px`;
+      img.style.top = `${offsetY - crop.y * scale}px`;
+    }
+
+    function setupDrag(card, leftBadge, rightBadge) {
+      card.addEventListener('pointerdown', (event) => {
+        state.drag.active = true;
+        state.drag.startX = event.clientX;
+        state.drag.startY = event.clientY;
+        state.drag.x = 0;
+        state.drag.y = 0;
+        state.drag.pointerId = event.pointerId;
+        card.classList.add('dragging');
+        card.setPointerCapture(event.pointerId);
+      });
+
+      card.addEventListener('pointermove', (event) => {
+        if (!state.drag.active || event.pointerId !== state.drag.pointerId) return;
+
+        state.drag.x = event.clientX - state.drag.startX;
+        state.drag.y = event.clientY - state.drag.startY;
+        const rotate = state.drag.x * 0.05;
+        card.style.transform = `translate(${state.drag.x}px, ${state.drag.y}px) rotate(${rotate}deg)`;
+
+        const opacity = Math.min(Math.abs(state.drag.x) / 120, 1);
+        leftBadge.style.opacity = state.drag.x < 0 ? String(opacity) : '0';
+        rightBadge.style.opacity = state.drag.x > 0 ? String(opacity) : '0';
+      });
+
+      function endDrag(event) {
+        if (!state.drag.active || event.pointerId !== state.drag.pointerId) return;
+        const threshold = Math.min(140, window.innerWidth * 0.22);
+        const direction = state.drag.x > threshold ? 'right' : state.drag.x < -threshold ? 'left' : null;
+        state.drag.active = false;
+        card.classList.remove('dragging');
+
+        if (direction) {
+          animateOut(card, direction);
+        } else {
+          card.style.transform = 'translate(0px, 0px) rotate(0deg)';
+          leftBadge.style.opacity = '0';
+          rightBadge.style.opacity = '0';
+        }
+      }
+
+      card.addEventListener('pointerup', endDrag);
+      card.addEventListener('pointercancel', endDrag);
+    }
+
+    function animateOut(card, direction) {
+      const offset = direction === 'right' ? window.innerWidth : -window.innerWidth;
+      card.style.transform = `translate(${offset}px, 40px) rotate(${direction === 'right' ? 24 : -24}deg)`;
+      card.style.opacity = '0';
+
+      window.setTimeout(() => {
+        recordDecision(direction);
+      }, 220);
+    }
+
+    function commitSwipe(direction) {
+      if (state.edit.active) return;
+      const card = stack.querySelector('.card');
+      if (!card) return;
+      animateOut(card, direction);
+    }
+
+    function recordDecision(direction) {
+      const item = state.items[state.currentIndex];
+      state.decisions.push({
+        ...item,
+        decision: direction === 'right' ? 'keep' : 'reject',
+        reviewedAt: new Date().toISOString()
+      });
+
+      state.currentIndex += 1;
+      statusEl.textContent = `Marked "${item.name || '(untitled)'}" as ${direction === 'right' ? 'keep' : 'reject'}.`;
+      render();
+    }
+
+    function saveCurrentDetails() {
+      const index = getActiveItemIndex();
+      if (index == null) return;
+      const item = state.items[index];
+      item.name = nameInput.value.trim();
+      item.location = locationInput.value.trim();
+      statusEl.textContent = `Saved details for "${item.name || '(untitled)'}".`;
+      render();
+    }
+
+    function enterCropEditMode() {
+      if (!state.items.length || state.currentIndex >= state.items.length) return;
+      const item = state.items[state.currentIndex];
+      state.edit.active = true;
+      state.edit.itemIndex = state.currentIndex;
+      state.edit.crop = { ...item.crop };
+      state.edit.imageEl = null;
+      state.edit.overlayEl = null;
+      state.edit.selectionEl = null;
+      state.edit.pointerId = null;
+      state.edit.interaction = null;
+      statusEl.textContent = `Editing crop for "${item.name || '(untitled)'}".`;
+      render();
+    }
+
+    function saveCrop() {
+      if (!state.edit.active || state.edit.itemIndex == null || !state.edit.crop) return;
+      const item = state.items[state.edit.itemIndex];
+      item.crop = normalizeCrop(state.edit.crop);
+      const name = item.name || '(untitled)';
+      exitEditMode(true);
+      statusEl.textContent = `Saved crop for "${name}". Download the updated JSON when you're ready.`;
+      render();
+    }
+
+    function cancelCropEdit() {
+      if (!state.edit.active) return;
+      const item = state.items[state.edit.itemIndex];
+      exitEditMode(true);
+      statusEl.textContent = `Canceled crop editing for "${item?.name || '(untitled)'}".`;
+      render();
+    }
+
+    function exitEditMode(keepIndex) {
+      const current = keepIndex ? state.currentIndex : 0;
+      state.edit.active = false;
+      state.edit.itemIndex = null;
+      state.edit.crop = null;
+      state.edit.imageEl = null;
+      state.edit.overlayEl = null;
+      state.edit.selectionEl = null;
+      state.edit.pointerId = null;
+      state.edit.interaction = null;
+      state.currentIndex = current;
+    }
+
+    function renderEditor() {
+      const item = state.items[state.edit.itemIndex];
+      stageHint.textContent = 'Drag inside the box to move it. Drag the corners to resize it. Save crop to write the new coordinates back into the JSON data.';
+
+      stack.innerHTML = `
+        <div class="editor-shell">
+          <div class="editor-header">
+            <div>
+              <h2>Edit crop</h2>
+              <p class="editor-subtitle">${escapeHtml(item.name || '(untitled)')} — ${escapeHtml(item.location || '(no location)')}</p>
+            </div>
+            <div class="counter">${state.edit.itemIndex + 1} / ${state.items.length}</div>
+          </div>
+          <div class="editor-workspace">
+            <div class="editor-image-wrap" id="editorImageWrap">
+              <img id="editorImage" alt="${escapeHtml(item.name || 'Image')}" src="${escapeAttribute(item.link)}" />
+              <div id="editorOverlay" class="editor-overlay">
+                <div id="selection" class="selection">
+                  <div class="selection-label" id="selectionLabel">crop</div>
+                  <div class="handle nw" data-handle="nw"></div>
+                  <div class="handle ne" data-handle="ne"></div>
+                  <div class="handle sw" data-handle="sw"></div>
+                  <div class="handle se" data-handle="se"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="editor-hint">Crop values are stored in source-image pixels.</p>
+        </div>
+      `;
+
+      const imageEl = document.getElementById('editorImage');
+      const overlayEl = document.getElementById('editorOverlay');
+      const selectionEl = document.getElementById('selection');
+
+      state.edit.imageEl = imageEl;
+      state.edit.overlayEl = overlayEl;
+      state.edit.selectionEl = selectionEl;
+
+      imageEl.addEventListener('load', () => {
+        clampCropToImage();
+        updateEditorSelection();
+      });
+      imageEl.addEventListener('error', () => {
+        statusEl.textContent = `Image failed to load: ${item.link}`;
+      });
+
+      setupEditorInteractions();
+      if (imageEl.complete && imageEl.naturalWidth > 0) {
+        clampCropToImage();
+        updateEditorSelection();
+      }
+    }
+
+    function setupEditorInteractions() {
+      const overlay = state.edit.overlayEl;
+      const selection = state.edit.selectionEl;
+      if (!overlay || !selection) return;
+
+      overlay.onpointerdown = (event) => {
+        if (!state.edit.active) return;
+        const target = event.target;
+        const point = pointerToImagePixels(event);
+        if (!point) return;
+
+        let mode = 'draw';
+        if (target.dataset.handle) {
+          mode = `resize-${target.dataset.handle}`;
+        } else if (target === selection || selection.contains(target)) {
+          mode = target.dataset.handle ? `resize-${target.dataset.handle}` : 'move';
+        }
+
+        state.edit.pointerId = event.pointerId;
+        state.edit.interaction = {
+          mode,
+          startPoint: point,
+          startCrop: { ...state.edit.crop }
+        };
+
+        if (mode === 'draw') {
+          state.edit.crop = { x: point.x, y: point.y, width: MIN_CROP_SIZE, height: MIN_CROP_SIZE };
+          updateEditorSelection();
+        }
+
+        overlay.setPointerCapture(event.pointerId);
+        event.preventDefault();
+      };
+
+      overlay.onpointermove = (event) => {
+        if (!state.edit.active || event.pointerId !== state.edit.pointerId || !state.edit.interaction) return;
+        const point = pointerToImagePixels(event);
+        if (!point) return;
+        updateCropFromInteraction(point);
+        updateEditorSelection();
+        renderMeta();
+      };
+
+      overlay.onpointerup = finishEditorInteraction;
+      overlay.onpointercancel = finishEditorInteraction;
+    }
+
+    function finishEditorInteraction(event) {
+      if (event.pointerId !== state.edit.pointerId) return;
+      state.edit.pointerId = null;
+      state.edit.interaction = null;
+      clampCropToImage();
+      updateEditorSelection();
+      renderMeta();
+    }
+
+    function pointerToImagePixels(event) {
+      const imageEl = state.edit.imageEl;
+      if (!imageEl || !imageEl.naturalWidth || !imageEl.naturalHeight) return null;
+      const rect = imageEl.getBoundingClientRect();
+      const x = clamp(event.clientX - rect.left, 0, rect.width);
+      const y = clamp(event.clientY - rect.top, 0, rect.height);
+      return {
+        x: Math.round((x / rect.width) * imageEl.naturalWidth),
+        y: Math.round((y / rect.height) * imageEl.naturalHeight)
+      };
+    }
+
+    function updateCropFromInteraction(point) {
+      const interaction = state.edit.interaction;
+      const start = interaction.startCrop;
+      const dx = point.x - interaction.startPoint.x;
+      const dy = point.y - interaction.startPoint.y;
+      const imageEl = state.edit.imageEl;
+      const maxW = imageEl.naturalWidth;
+      const maxH = imageEl.naturalHeight;
+
+      if (interaction.mode === 'move') {
+        state.edit.crop = {
+          x: clamp(start.x + dx, 0, maxW - start.width),
+          y: clamp(start.y + dy, 0, maxH - start.height),
+          width: start.width,
+          height: start.height
+        };
+        return;
+      }
+
+      if (interaction.mode === 'draw') {
+        const x1 = clamp(interaction.startPoint.x, 0, maxW);
+        const y1 = clamp(interaction.startPoint.y, 0, maxH);
+        const x2 = clamp(point.x, 0, maxW);
+        const y2 = clamp(point.y, 0, maxH);
+        state.edit.crop = {
+          x: Math.min(x1, x2),
+          y: Math.min(y1, y2),
+          width: Math.max(MIN_CROP_SIZE, Math.abs(x2 - x1)),
+          height: Math.max(MIN_CROP_SIZE, Math.abs(y2 - y1))
+        };
+        clampCropToImage();
+        return;
+      }
+
+      let next = { ...start };
+      switch (interaction.mode) {
+        case 'resize-nw': {
+          const x = clamp(start.x + dx, 0, start.x + start.width - MIN_CROP_SIZE);
+          const y = clamp(start.y + dy, 0, start.y + start.height - MIN_CROP_SIZE);
+          next.x = x;
+          next.y = y;
+          next.width = start.x + start.width - x;
+          next.height = start.y + start.height - y;
+          break;
+        }
+        case 'resize-ne': {
+          const right = clamp(start.x + start.width + dx, start.x + MIN_CROP_SIZE, maxW);
+          const y = clamp(start.y + dy, 0, start.y + start.height - MIN_CROP_SIZE);
+          next.y = y;
+          next.width = right - start.x;
+          next.height = start.y + start.height - y;
+          break;
+        }
+        case 'resize-sw': {
+          const x = clamp(start.x + dx, 0, start.x + start.width - MIN_CROP_SIZE);
+          const bottom = clamp(start.y + start.height + dy, start.y + MIN_CROP_SIZE, maxH);
+          next.x = x;
+          next.width = start.x + start.width - x;
+          next.height = bottom - start.y;
+          break;
+        }
+        case 'resize-se': {
+          const right = clamp(start.x + start.width + dx, start.x + MIN_CROP_SIZE, maxW);
+          const bottom = clamp(start.y + start.height + dy, start.y + MIN_CROP_SIZE, maxH);
+          next.width = right - start.x;
+          next.height = bottom - start.y;
+          break;
+        }
+      }
+      state.edit.crop = normalizeCrop(next);
+    }
+
+    function clampCropToImage() {
+      const imageEl = state.edit.imageEl;
+      if (!imageEl || !imageEl.naturalWidth || !imageEl.naturalHeight || !state.edit.crop) return;
+      const maxW = imageEl.naturalWidth;
+      const maxH = imageEl.naturalHeight;
+      const crop = normalizeCrop(state.edit.crop);
+      crop.width = Math.min(crop.width, maxW);
+      crop.height = Math.min(crop.height, maxH);
+      crop.x = clamp(crop.x, 0, maxW - crop.width);
+      crop.y = clamp(crop.y, 0, maxH - crop.height);
+      state.edit.crop = crop;
+    }
+
+    function updateEditorSelection() {
+      const imageEl = state.edit.imageEl;
+      const selectionEl = state.edit.selectionEl;
+      if (!imageEl || !selectionEl || !imageEl.naturalWidth || !state.edit.crop) return;
+
+      const rect = imageEl.getBoundingClientRect();
+      const scaleX = rect.width / imageEl.naturalWidth;
+      const scaleY = rect.height / imageEl.naturalHeight;
+      const crop = state.edit.crop;
+
+      selectionEl.style.left = `${crop.x * scaleX}px`;
+      selectionEl.style.top = `${crop.y * scaleY}px`;
+      selectionEl.style.width = `${crop.width * scaleX}px`;
+      selectionEl.style.height = `${crop.height * scaleY}px`;
+
+      const label = document.getElementById('selectionLabel');
+      if (label) {
+        label.textContent = `x:${crop.x} y:${crop.y} w:${crop.width} h:${crop.height}`;
+      }
+    }
+
+    function resetDeck() {
+      state.currentIndex = 0;
+      state.decisions = [];
+      exitEditMode(true);
+      statusEl.textContent = state.items.length
+        ? `Reset deck with ${state.items.length} item${state.items.length === 1 ? '' : 's'}.`
+        : 'Load a JSON file or add images to begin.';
+      render();
+    }
+
+    async function handleAddLink() {
+      const link = linkInput.value.trim();
+      if (!link) {
+        statusEl.textContent = 'Enter an image URL first.';
+        return;
+      }
+
+      addLinkBtn.disabled = true;
+      try {
+        const item = await createItemFromSource(
+          link,
+          newNameInput.value.trim() || guessNameFromPath(link) || 'Untitled image',
+          newLocationInput.value.trim()
+        );
+        insertNewItems([item]);
+        linkInput.value = '';
+        newNameInput.value = '';
+        newLocationInput.value = '';
+        statusEl.textContent = `Added "${item.name}" from link.`;
+        render();
+      } catch (error) {
+        console.error(error);
+        statusEl.textContent = `Could not add image from link: ${error.message}`;
+      } finally {
+        addLinkBtn.disabled = false;
+      }
+    }
+
+    async function handleLocalFilesSelection(event) {
+      const files = Array.from(event.target.files || []);
+      if (!files.length) return;
+      await addLocalFiles(files);
+      imageFiles.value = '';
+    }
+
+    async function addLocalFiles(files) {
+      try {
+        const imageOnly = files.filter((file) => file.type.startsWith('image/'));
+        if (!imageOnly.length) {
+          statusEl.textContent = 'No image files were found.';
+          return;
+        }
+
+        statusEl.textContent = `Processing ${imageOnly.length} image file${imageOnly.length === 1 ? '' : 's'}...`;
+        const items = [];
+        for (const file of imageOnly) {
+          const dataUrl = await readFileAsDataUrl(file);
+          const item = await createItemFromSource(dataUrl, baseName(file.name), '');
+          items.push(item);
+        }
+
+        insertNewItems(items);
+        statusEl.textContent = `Added ${items.length} local image${items.length === 1 ? '' : 's'}.`;
+        render();
+      } catch (error) {
+        console.error(error);
+        statusEl.textContent = `Could not add local images: ${error.message}`;
+      }
+    }
+
+    function setupDropzone() {
+      ['dragenter', 'dragover'].forEach((type) => {
+        dropzone.addEventListener(type, (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          dropzone.classList.add('active');
+        });
+      });
+
+      ['dragleave', 'dragend'].forEach((type) => {
+        dropzone.addEventListener(type, () => {
+          dropzone.classList.remove('active');
+        });
+      });
+
+      dropzone.addEventListener('drop', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        dropzone.classList.remove('active');
+        const files = Array.from(event.dataTransfer?.files || []);
+        if (files.length) {
+          await addLocalFiles(files);
+        }
+      });
+    }
+
+    function insertNewItems(newItems) {
+      if (!newItems.length) return;
+
+      if (state.items.length === 0) {
+        state.items = [...newItems];
+        state.currentIndex = 0;
+        state.decisions = [];
+        return;
+      }
+
+      state.items.push(...newItems);
+      if (state.currentIndex >= state.items.length - newItems.length) {
+        state.currentIndex = Math.max(0, state.items.length - newItems.length);
+      }
+    }
+
+    async function createItemFromSource(src, name, location) {
+      const { width, height } = await getImageDimensions(src);
+      return {
+        link: src,
+        crop: { x: 0, y: 0, width, height },
+        name: name || 'Untitled image',
+        location: location || ''
+      };
+    }
+
+    function getImageDimensions(src) {
+      return new Promise((resolve, reject) => {
+        const img = new Image();
+        img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
+        img.onerror = () => reject(new Error('image could not be loaded'));
+        img.src = src;
+      });
+    }
+
+    function readFileAsDataUrl(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(new Error(`failed to read ${file.name}`));
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function renderResults() {
+      resultsEl.innerHTML = '';
+      if (!state.decisions.length) {
+        resultsEl.innerHTML = '<p style="margin:0; color: var(--muted);">No decisions yet.</p>';
+        return;
+      }
+
+      [...state.decisions].reverse().slice(0, 8).forEach((entry) => {
+        const row = document.createElement('div');
+        row.className = 'results-item';
+        row.innerHTML = `
+          <div>
+            <strong>${escapeHtml(entry.name || '(untitled)')}</strong><br>
+            <small>${escapeHtml(entry.location || '(no location)')}</small>
+          </div>
+          <strong>${entry.decision === 'keep' ? 'Keep' : 'Reject'}</strong>
+        `;
+        resultsEl.appendChild(row);
+      });
+    }
+
+    function downloadData() {
+      const exportItems = state.items.map((item) => ({
+        link: item.link,
+        crop: normalizeCrop(item.crop),
+        name: item.name,
+        location: item.location
+      }));
+
+      const blob = new Blob([JSON.stringify(exportItems, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'updated-links.json';
+      link.click();
+      URL.revokeObjectURL(url);
+      statusEl.textContent = 'Downloaded the updated JSON file.';
+    }
+
+    function downloadResults() {
+      const blob = new Blob([JSON.stringify(state.decisions, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'swipe-results.json';
+      link.click();
+      URL.revokeObjectURL(url);
+      statusEl.textContent = 'Downloaded swipe results.';
+    }
+
+    function normalizeCrop(crop) {
+      return {
+        x: Math.max(0, Math.round(crop.x)),
+        y: Math.max(0, Math.round(crop.y)),
+        width: Math.max(MIN_CROP_SIZE, Math.round(crop.width)),
+        height: Math.max(MIN_CROP_SIZE, Math.round(crop.height))
+      };
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(Math.max(value, min), max);
+    }
+
+    function toggleSidebar() {
+      appEl.classList.toggle('sidebar-collapsed');
+      updateButtons();
+    }
+
+    function baseName(filename) {
+      return String(filename).replace(/\.[^.]+$/, '') || 'Untitled image';
+    }
+
+    function guessNameFromPath(path) {
+      try {
+        const clean = path.split('?')[0].split('#')[0];
+        const last = clean.split('/').pop();
+        return last ? baseName(decodeURIComponent(last)) : '';
+      } catch {
+        return '';
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll('&', '&amp;')
+        .replaceAll('<', '&lt;')
+        .replaceAll('>', '&gt;')
+        .replaceAll('"', '&quot;')
+        .replaceAll("'", '&#39;');
+    }
+
+    function escapeAttribute(value) {
+      return escapeHtml(value);
+    }
+  </script>
+</body>
+</html>

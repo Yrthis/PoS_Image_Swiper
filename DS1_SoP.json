@@ -1,0 +1,310 @@
+[
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/2/2a/Asylum_Demon_Ingame.jpg/revision/latest?cb=20160701045859",
+    "crop": {
+      "x": 543,
+      "y": 19,
+      "width": 929,
+      "height": 1049
+    },
+    "name": "Asylum Demon",
+    "location": "Northern Undead Asylum"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/c/ce/Stray_demon1.jpg/revision/latest?cb=20140722134258",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 600,
+      "height": 338
+    },
+    "name": "Stray Demon",
+    "location": "Northern Undead Asylum"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/5/5e/Taurus_Demon.jpg/revision/latest?cb=20160701045917",
+    "crop": {
+      "x": 500,
+      "y": 0,
+      "width": 900,
+      "height": 1035
+    },
+    "name": "Taurus Demon",
+    "location": "Undead Burg"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/5/5f/Gargoyles.png/revision/latest?cb=20190714003254",
+    "crop": {
+      "x": 694,
+      "y": 214,
+      "width": 540,
+      "height": 754
+    },
+    "name": "Bell Gargoyle",
+    "location": "Undead Parish"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/2/20/CapraDemon.jpg/revision/latest?cb=20160517145311",
+    "crop": {
+      "x": 383,
+      "y": 0,
+      "width": 900,
+      "height": 1019
+    },
+    "name": "Capra Demon",
+    "location": "Undead Burg"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/5/53/Gaping_dragon02.jpg/revision/latest?cb=20130204111659",
+    "crop": {
+      "x": 152,
+      "y": 0,
+      "width": 1406,
+      "height": 941
+    },
+    "name": "Gaping Dragon",
+    "location": "Depths"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/4/43/Chaos_Witch_Quelaag.png/revision/latest?cb=20210810055225",
+    "crop": {
+      "x": 43,
+      "y": 80,
+      "width": 2026,
+      "height": 1389
+    },
+    "name": "Chaos Witch Quelaag",
+    "location": "Quelaag's Domain"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/8/82/Moonlight_butterfly01.jpg/revision/latest?cb=20130205181800",
+    "crop": {
+      "x": 1,
+      "y": 0,
+      "width": 1019,
+      "height": 460
+    },
+    "name": "Moonlight Butterfly",
+    "location": "Darkroot Garden"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/c/ca/Sif_appears.jpg/revision/latest?cb=20130205185655",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 498,
+      "height": 648
+    },
+    "name": "Great Grey Wolf Sif",
+    "location": "Darkroot Garden"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/0/0d/Iron_Golem.png/revision/latest?cb=20130817165910",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 882,
+      "height": 831
+    },
+    "name": "Iron Golem",
+    "location": "Sen's Fortress"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/e/e3/Ornstein_giant.jpg/revision/latest?cb=20130210002532",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 793,
+      "height": 860
+    },
+    "name": "Dragon Slayer Ornstein",
+    "location": "Anor Lando"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/3/36/Smough_-_Solo.png/revision/latest?cb=20250518201106",
+    "crop": {
+      "x": 175,
+      "y": 0,
+      "width": 900,
+      "height": 1080
+    },
+    "name": "Executioner Smough",
+    "location": "Anor Lando"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/b/b3/Ornstein_%26_Smough_-_Cutscene_End.png/revision/latest?cb=20250518195402",
+    "crop": {
+      "x": 449,
+      "y": 0,
+      "width": 1191,
+      "height": 970
+    },
+    "name": "Dragon Slayer Ornstein & Executioner Smough",
+    "location": "Anor Lando"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/7/7d/Tumblr_inline_orrlatXBwM1u8tdsa_540.jpg/revision/latest?cb=20180820112912",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 540,
+      "height": 589
+    },
+    "name": "Dark Sun Gwyndolin",
+    "location": "Anor Lando"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/b/b6/Priscilla.png/revision/latest?cb=20210810055608",
+    "crop": {
+      "x": 0,
+      "y": 312,
+      "width": 1059,
+      "height": 1371
+    },
+    "name": "Crossbreed Priscilla",
+    "location": "Painted World of Ariamis"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/8/86/Seath_the_scaleless_Model.png/revision/latest?cb=20210810060742",
+    "crop": {
+      "x": 120,
+      "y": 9,
+      "width": 2163,
+      "height": 1269
+    },
+    "name": "Seath the Scaleless",
+    "location": "Crystal Cave"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/2/2f/Pinwheel_Ingame.jpg/revision/latest?cb=20160614065326",
+    "crop": {
+      "x": 266,
+      "y": 0,
+      "width": 1127,
+      "height": 1020
+    },
+    "name": "Pinwheel",
+    "location": "The Catacombs"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/b/b1/Gravelord_Nito.png/revision/latest?cb=20210816221448",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 858,
+      "height": 931
+    },
+    "name": "Gravelord Nito",
+    "location": "Tomb of the Giants"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/4/46/Four_Kings_Model.png/revision/latest?cb=20210810055919",
+    "crop": {
+      "x": 120,
+      "y": 80,
+      "width": 1165,
+      "height": 1731
+    },
+    "name": "Four Kings",
+    "location": "New Londo Ruins"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/1/17/Ceaseless_Discharge.png/revision/latest?cb=20130808000356",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 466,
+      "height": 753
+    },
+    "name": "Ceaseless Discharge",
+    "location": "Demon Ruins"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/a/aa/Demon_Firesage.jpg/revision/latest?cb=20160608105549",
+    "crop": {
+      "x": 349,
+      "y": 0,
+      "width": 900,
+      "height": 956
+    },
+    "name": "Demon Firesage",
+    "location": "Demon Ruins"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/c/c4/CentipedeDemon.jpg/revision/latest?cb=20160511155258",
+    "crop": {
+      "x": 731,
+      "y": 0,
+      "width": 1126,
+      "height": 1080
+    },
+    "name": "Centipede Demon",
+    "location": "Demon Ruins"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/9/9d/Tree_Beast.png/revision/latest?cb=20140928062727",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 776,
+      "height": 361
+    },
+    "name": "Bed of Chaos",
+    "location": "Lost Izalith"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/a/ad/DS1R_Gwyn%2C_Lord_of_Cinder_%28full_body%29.webp/revision/latest?cb=20231126230352",
+    "crop": {
+      "x": 109,
+      "y": 20,
+      "width": 968,
+      "height": 1386
+    },
+    "name": "Gwyn, Lord of Cinder",
+    "location": "Kiln of the First Flame"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/3/34/Sanctuary_Guardian.png/revision/latest?cb=20130812200330",
+    "crop": {
+      "x": 33,
+      "y": 0,
+      "width": 1605,
+      "height": 963
+    },
+    "name": "Sanctuary Guardian",
+    "location": "Sanctuary Garden"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/b/ba/Knight_Artorias_Model.png/revision/latest?cb=20210810060149",
+    "crop": {
+      "x": 0,
+      "y": 62,
+      "width": 849,
+      "height": 1508
+    },
+    "name": "Artorias the Abysswalker",
+    "location": "Royal Wood"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/1/14/Karamito.jpg/revision/latest?cb=20160702005009",
+    "crop": {
+      "x": 291,
+      "y": 0,
+      "width": 956,
+      "height": 930
+    },
+    "name": "Black Dragon Kalameet",
+    "location": "Royal Wood"
+  },
+  {
+    "link": "https://static.wikia.nocookie.net/darksouls/images/f/fa/Manus%2C_Father_of_the_Abyss_Ingame.jpg/revision/latest?cb=20160702022012",
+    "crop": {
+      "x": 31,
+      "y": 0,
+      "width": 1690,
+      "height": 1080
+    },
+    "name": "Manus, Father of the Abyss",
+    "location": "Chasm of the Abyss"
+  }
+]
