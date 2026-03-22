@@ -11,6 +11,7 @@ To test it
   
   
 ### Todo
+- [ ] Resize dynamically
 - [ ] Split Swipe mode and Edit mode  
 - [ ] Define clear workflows  
 - [ ] Implement clear workflows
