@@ -22,6 +22,7 @@
 
     * { box-sizing: border-box; }
 
+    /* [LAYOUT] App shell with optional collapsible sidebar and sticky stage area. */
     body {
       margin: 0;
       font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -92,6 +93,10 @@
       background: rgba(255,255,255,0.03);
       border: 1px solid rgba(255,255,255,0.06);
       border-radius: 18px;
+    }
+
+    .section[hidden] {
+      display: none !important;
     }
 
     .section-title {
@@ -394,6 +399,7 @@
       -webkit-user-drag: none;
     }
 
+    /* [CROP] Overlay projects crop pixels into on-screen coordinates for direct manipulation. */
     .editor-overlay {
       position: absolute;
       inset: 0;
@@ -446,6 +452,83 @@
       font-size: 0.95rem;
     }
 
+    .mode-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(220px, 1fr));
+      gap: 16px;
+      width: min(760px, 100%);
+    }
+
+    .mode-tile {
+      border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(15, 23, 42, 0.72);
+      border-radius: 22px;
+      padding: 28px;
+      text-align: left;
+      display: grid;
+      gap: 8px;
+      cursor: pointer;
+      transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+    }
+
+    .mode-tile:hover {
+      transform: translateY(-2px);
+      border-color: rgba(56, 189, 248, 0.6);
+      background: rgba(15, 23, 42, 0.88);
+    }
+
+    .mode-tile h3 {
+      margin: 0;
+      font-size: 1.45rem;
+    }
+
+    .mode-tile p {
+      margin: 0;
+      color: #cbd5e1;
+    }
+
+    .mode-tile.coming-soon {
+      border-color: rgba(245, 158, 11, 0.38);
+    }
+
+    .import-shell {
+      display: grid;
+      gap: 14px;
+      width: min(640px, 100%);
+      margin: 0 auto;
+      text-align: left;
+    }
+
+    .import-shell h2,
+    .import-shell p {
+      margin: 0;
+    }
+
+    .stage-main {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 14px;
+      align-items: center;
+    }
+
+    .stack-col {
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .edit-nav-row {
+      display: none;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .reorder-col {
+      display: none;
+      gap: 10px;
+      align-self: center;
+    }
+
     @media (max-width: 1080px) {
       .app { grid-template-columns: 1fr; }
       .app.sidebar-collapsed { grid-template-columns: 1fr; }
@@ -455,45 +538,48 @@
       .stage { min-height: auto; }
       .editor-header { flex-direction: column; }
       .inline-grid { grid-template-columns: 1fr; }
+      .mode-grid { grid-template-columns: 1fr; }
+      .stage-main { grid-template-columns: 1fr; }
+      .reorder-col { grid-auto-flow: column; justify-content: center; }
       .editor-image-wrap img { max-width: 100%; }
     }
   </style>
 </head>
 <body>
   <div class="app">
+    <!-- [UI] Sidebar groups import, controls, edit, add, and export actions. -->
     <section class="panel controls">
       <div>
         <div class="button-row" style="justify-content: space-between; align-items: center; margin-bottom: 8px;">
           <h1 style="margin:0;">Image Swiper</h1>
           <button id="toggleSidebarBtn" class="ghost" type="button">Hide options</button>
         </div>
-        <p>Load JSON, swipe cards, edit crop/name/location, and add new images from URLs or local files. Export the updated JSON when you're done.</p>
+        <p id="controlsIntro">Load JSON, swipe cards, edit crop/name/location, and add new images from URLs or local files. Export the updated JSON when you're done.</p>
       </div>
 
-      <div class="section">
+      <div id="loadSection" class="section">
         <div class="section-title">Load dataset</div>
         <input id="jsonFile" class="file-input" type="file" accept="application/json,.json" />
         <p class="helper">The JSON can contain normal image URLs or data URLs for local images.</p>
       </div>
 
-      <div class="section">
+      <div id="swipeSection" class="section">
         <div class="section-title">Swipe controls</div>
         <div class="button-row">
           <button id="swipeLeftBtn" class="danger" disabled>Swipe left</button>
           <button id="swipeRightBtn" class="success" disabled>Swipe right</button>
           <button id="resetBtn" class="ghost" disabled>Reset deck</button>
         </div>
-        <p class="helper">Arrow left/right also work. Press E to edit the crop for the current item.</p>
+        <p class="helper">Arrow left/right also work, or drag the top card.</p>
       </div>
 
-      <div class="section">
+      <div id="detailsSection" class="section">
         <div class="section-title">Current item details</div>
         <div class="inline-grid">
           <input id="nameInput" class="text-input" type="text" placeholder="Name" disabled />
           <input id="locationInput" class="text-input" type="text" placeholder="Location" disabled />
         </div>
         <div class="button-row">
-          <button id="saveDetailsBtn" class="primary" disabled>Save details</button>
           <button id="editCropBtn" class="info" disabled>Edit crop</button>
           <button id="saveCropBtn" class="warn" disabled>Save crop</button>
           <button id="cancelCropBtn" class="ghost" disabled>Cancel crop</button>
@@ -501,7 +587,7 @@
         <div id="metaBox" class="meta-box"></div>
       </div>
 
-      <div class="section">
+      <div id="addLinkSection" class="section">
         <div class="section-title">Add by image link</div>
         <input id="linkInput" class="text-input" type="url" placeholder="https://example.com/image.jpg" />
         <div class="inline-grid">
@@ -513,7 +599,7 @@
         </div>
       </div>
 
-      <div class="section">
+      <div id="addLocalSection" class="section">
         <div class="section-title">Add local images</div>
         <input id="imageFiles" class="file-input" type="file" accept="image/*" multiple />
         <div id="dropzone" class="dropzone">
@@ -522,7 +608,7 @@
         </div>
       </div>
 
-      <div class="section">
+      <div id="exportSection" class="section">
         <div class="section-title">Export</div>
         <div class="button-row">
           <button id="downloadDataBtn" class="primary" disabled>Download updated JSON</button>
@@ -531,7 +617,7 @@
         <div id="status" class="status">Load a JSON file to begin.</div>
       </div>
 
-      <div class="section">
+      <div id="formatSection" class="section">
         <div class="section-title">Expected JSON format</div>
         <pre class="sample">[
   {
@@ -543,22 +629,35 @@
 ]</pre>
       </div>
 
-      <div class="section">
+      <div id="resultsSection" class="section">
         <div class="section-title">Recent decisions</div>
         <div id="results" class="results"></div>
       </div>
     </section>
 
+    <!-- [UI] Stage swaps between swipe stack and crop editor depending on state.edit.active. -->
     <section class="stage stack-wrap">
       <div class="stage-topbar">
         <button id="toggleSidebarBtnStage" class="ghost" type="button">Hide options</button>
       </div>
-      <div id="stack" class="stack">
-        <div class="empty-state">
-          <div>
-            <h2 style="margin-top:0;">No data loaded</h2>
-            <p>Select a JSON file or start adding images manually.</p>
+      <div class="stage-main">
+        <div class="stack-col">
+          <div id="stack" class="stack">
+            <div class="empty-state">
+              <div>
+                <h2 style="margin-top:0;">No data loaded</h2>
+                <p>Select a JSON file or start adding images manually.</p>
+              </div>
+            </div>
           </div>
+          <div id="editNavRow" class="edit-nav-row">
+            <button id="prevItemBtn" class="ghost" type="button">Previous</button>
+            <button id="nextItemBtn" class="ghost" type="button">Next</button>
+          </div>
+        </div>
+        <div id="reorderCol" class="reorder-col">
+          <button id="moveUpBtn" class="warn" type="button">Move up</button>
+          <button id="moveDownBtn" class="warn" type="button">Move down</button>
         </div>
       </div>
       <p id="stageHint" class="hint">Load a dataset or add images to begin.</p>
@@ -568,7 +667,10 @@
   <script>
     const MIN_CROP_SIZE = 20;
 
+    // [STATE] Single source of truth: persistent data + transient pointer/editor interaction state.
     const state = {
+      mode: null,
+      editEntry: 'menu',
       items: [],
       currentIndex: 0,
       decisions: [],
@@ -592,6 +694,7 @@
       }
     };
 
+    // [DOM] Cache frequently used elements once; render handlers mutate these nodes directly.
     const stack = document.getElementById('stack');
     const statusEl = document.getElementById('status');
     const resultsEl = document.getElementById('results');
@@ -608,7 +711,6 @@
     const downloadResultsBtn = document.getElementById('downloadResultsBtn');
     const nameInput = document.getElementById('nameInput');
     const locationInput = document.getElementById('locationInput');
-    const saveDetailsBtn = document.getElementById('saveDetailsBtn');
     const linkInput = document.getElementById('linkInput');
     const newNameInput = document.getElementById('newNameInput');
     const newLocationInput = document.getElementById('newLocationInput');
@@ -616,9 +718,25 @@
     const imageFiles = document.getElementById('imageFiles');
     const dropzone = document.getElementById('dropzone');
     const appEl = document.querySelector('.app');
+    const controlsIntro = document.getElementById('controlsIntro');
+    const loadSection = document.getElementById('loadSection');
+    const swipeSection = document.getElementById('swipeSection');
+    const detailsSection = document.getElementById('detailsSection');
+    const addLinkSection = document.getElementById('addLinkSection');
+    const addLocalSection = document.getElementById('addLocalSection');
+    const exportSection = document.getElementById('exportSection');
+    const formatSection = document.getElementById('formatSection');
+    const resultsSection = document.getElementById('resultsSection');
     const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
     const toggleSidebarBtnStage = document.getElementById('toggleSidebarBtnStage');
+    const editNavRow = document.getElementById('editNavRow');
+    const reorderCol = document.getElementById('reorderCol');
+    const prevItemBtn = document.getElementById('prevItemBtn');
+    const nextItemBtn = document.getElementById('nextItemBtn');
+    const moveUpBtn = document.getElementById('moveUpBtn');
+    const moveDownBtn = document.getElementById('moveDownBtn');
 
+    // [EVENTS] UI events only mutate state through functions, then UI is reconciled via render().
     jsonFile.addEventListener('change', handleJsonFile);
     swipeLeftBtn.addEventListener('click', () => commitSwipe('left'));
     swipeRightBtn.addEventListener('click', () => commitSwipe('right'));
@@ -628,19 +746,32 @@
     resetBtn.addEventListener('click', resetDeck);
     downloadDataBtn.addEventListener('click', downloadData);
     downloadResultsBtn.addEventListener('click', downloadResults);
-    saveDetailsBtn.addEventListener('click', saveCurrentDetails);
     addLinkBtn.addEventListener('click', handleAddLink);
     imageFiles.addEventListener('change', handleLocalFilesSelection);
+    nameInput.addEventListener('blur', saveCurrentDetails);
+    locationInput.addEventListener('blur', saveCurrentDetails);
+    [nameInput, locationInput].forEach((input) => {
+      input.addEventListener('keydown', (event) => {
+        if (event.key !== 'Enter') return;
+        event.preventDefault();
+        saveCurrentDetails();
+        input.blur();
+      });
+    });
+    prevItemBtn.addEventListener('click', () => navigateEditItem(-1));
+    nextItemBtn.addEventListener('click', () => navigateEditItem(1));
+    moveUpBtn.addEventListener('click', () => moveCurrentItem(-1));
+    moveDownBtn.addEventListener('click', () => moveCurrentItem(1));
     window.addEventListener('resize', () => {
       if (state.edit.active) updateEditorSelection();
     });
 
     window.addEventListener('keydown', (event) => {
+      if (state.mode !== 'swipe') return;
       if (!state.items.length || state.currentIndex >= state.items.length) return;
       if (state.edit.active) return;
       if (event.key === 'ArrowLeft') commitSwipe('left');
       if (event.key === 'ArrowRight') commitSwipe('right');
-      if (event.key.toLowerCase() === 'e') enterCropEditMode();
     });
 
     setupDropzone();
@@ -648,14 +779,23 @@
     toggleSidebarBtnStage.addEventListener('click', toggleSidebar);
     render();
 
+    // [IMPORT] Pipeline keeps downstream code simple by enforcing shape and normalized crop values first.
     async function handleJsonFile(event) {
       const file = event.target.files?.[0];
       if (!file) return;
+      await importItemsFromFile(file, state.mode === 'edit' ? 'edit' : 'swipe');
+      event.target.value = '';
+    }
+
+    async function importItemsFromFile(file, targetMode = 'swipe') {
+      if (!(file instanceof File)) return;
 
       try {
         const text = await file.text();
         const parsed = JSON.parse(text);
         validateItems(parsed);
+        state.mode = targetMode;
+        state.editEntry = targetMode === 'edit' ? 'active' : 'menu';
         state.items = parsed.map(normalizeItem);
         state.currentIndex = 0;
         state.decisions = [];
@@ -673,6 +813,7 @@
       }
     }
 
+    // [IMPORT] Fail fast: this function throws on first invalid item so partial datasets never enter state.
     function validateItems(items) {
       if (!Array.isArray(items)) throw new Error('JSON root must be an array.');
 
@@ -711,26 +852,90 @@
     }
 
     function updateButtons() {
+      const swipeRuntime = state.mode === 'swipe' && state.items.length > 0;
+      const editRuntime = state.mode === 'edit' && state.editEntry === 'active';
       const hasItems = state.items.length > 0;
       const activeIndex = getActiveItemIndex();
       const hasActiveItem = activeIndex != null;
       const editing = state.edit.active;
 
-      swipeLeftBtn.disabled = !hasActiveItem || editing;
-      swipeRightBtn.disabled = !hasActiveItem || editing;
-      editCropBtn.disabled = !hasActiveItem || editing;
-      saveCropBtn.disabled = !editing;
-      cancelCropBtn.disabled = !editing;
-      resetBtn.disabled = !hasItems;
-      downloadDataBtn.disabled = !hasItems;
-      downloadResultsBtn.disabled = !state.decisions.length;
-      nameInput.disabled = !hasActiveItem;
-      locationInput.disabled = !hasActiveItem;
-      saveDetailsBtn.disabled = !hasActiveItem;
+      swipeLeftBtn.disabled = !swipeRuntime || !hasActiveItem || editing;
+      swipeRightBtn.disabled = !swipeRuntime || !hasActiveItem || editing;
+      editCropBtn.disabled = !editRuntime || !hasActiveItem || editing;
+      saveCropBtn.disabled = !editRuntime || !editing;
+      cancelCropBtn.disabled = !editRuntime || !editing;
+      resetBtn.disabled = !swipeRuntime || !hasItems;
+      downloadDataBtn.disabled = !editRuntime || !hasItems;
+      downloadResultsBtn.disabled = !swipeRuntime || !state.decisions.length;
+      nameInput.disabled = !editRuntime || !hasActiveItem;
+      locationInput.disabled = !editRuntime || !hasActiveItem;
+
+      prevItemBtn.disabled = !editRuntime || !hasItems || state.currentIndex <= 0;
+      nextItemBtn.disabled = !editRuntime || !hasItems || state.currentIndex >= state.items.length - 1;
+      moveUpBtn.disabled = !editRuntime || !hasItems || state.currentIndex <= 0;
+      moveDownBtn.disabled = !editRuntime || !hasItems || state.currentIndex >= state.items.length - 1;
 
       const collapsed = appEl.classList.contains('sidebar-collapsed');
       toggleSidebarBtn.textContent = collapsed ? 'Show options' : 'Hide options';
       toggleSidebarBtnStage.textContent = collapsed ? 'Show options' : 'Hide options';
+      applyModeLayout();
+    }
+
+    function applyModeLayout() {
+      const isSwipeRuntime = state.mode === 'swipe' && state.items.length > 0;
+      const isSwipeImport = state.mode === 'swipe' && !state.items.length;
+      const isEditRuntime = state.mode === 'edit' && state.editEntry === 'active';
+      const isEditMode = state.mode === 'edit';
+
+      if (isSwipeRuntime) {
+        controlsIntro.textContent = 'Swipe-only workflow is active. Edit tools are intentionally hidden in this mode.';
+      } else if (isEditRuntime) {
+        controlsIntro.textContent = 'Edit workflow is active. Manage images, details, order, and export your set.';
+      } else {
+        controlsIntro.textContent = 'Choose a mode on the right to start.';
+      }
+
+      loadSection.hidden = true;
+      detailsSection.hidden = !isEditRuntime;
+      addLinkSection.hidden = !isEditRuntime;
+      addLocalSection.hidden = !isEditRuntime;
+      formatSection.hidden = true;
+
+      swipeSection.hidden = !isSwipeRuntime || isEditMode;
+      exportSection.hidden = !(isSwipeRuntime || isEditRuntime);
+      resultsSection.hidden = !isSwipeRuntime || isEditMode;
+
+      downloadDataBtn.style.display = isEditRuntime ? '' : 'none';
+      downloadResultsBtn.style.display = isSwipeRuntime ? '' : 'none';
+
+      toggleSidebarBtn.style.display = isSwipeRuntime || isEditRuntime ? '' : 'none';
+      toggleSidebarBtnStage.style.display = isSwipeRuntime || isEditRuntime ? '' : 'none';
+
+      editNavRow.style.display = isEditRuntime ? 'flex' : 'none';
+      reorderCol.style.display = isEditRuntime ? 'grid' : 'none';
+
+      if (isEditRuntime) {
+        addLinkSection.style.order = '1';
+        addLocalSection.style.order = '2';
+        detailsSection.style.order = '3';
+        exportSection.style.order = '4';
+      } else {
+        addLinkSection.style.order = '';
+        addLocalSection.style.order = '';
+        detailsSection.style.order = '';
+        exportSection.style.order = '';
+      }
+
+      if (isEditMode) {
+        appEl.classList.remove('sidebar-collapsed');
+      }
+
+      if (!isSwipeRuntime && !isSwipeImport && !isEditRuntime && state.mode !== null) {
+        appEl.classList.add('sidebar-collapsed');
+      }
+      if (state.mode === null || isSwipeImport) {
+        appEl.classList.add('sidebar-collapsed');
+      }
     }
 
     function populateDetailsForm() {
@@ -744,11 +949,49 @@
       locationInput.value = item.location;
     }
 
+    // [RENDER] Branch order matters: empty -> editor -> finished -> swipe stack (mutually exclusive views).
+    // [RENDER] Side panels are refreshed before branch rendering so metadata/results stay in sync.
     function render() {
       stack.innerHTML = '';
       renderResults();
       renderMeta();
       populateDetailsForm();
+
+      if (state.mode == null) {
+        renderModeSelection();
+        updateButtons();
+        return;
+      }
+
+      if (state.mode === 'edit') {
+        if (state.editEntry === 'menu') {
+          renderEditModeEntry();
+          updateButtons();
+          return;
+        }
+
+        if (state.editEntry === 'load' && !state.items.length) {
+          renderEditModeImport();
+          updateButtons();
+          return;
+        }
+
+        if (state.edit.active) {
+          renderEditor();
+          updateButtons();
+          return;
+        }
+
+        renderEditModeWorkspace();
+        updateButtons();
+        return;
+      }
+
+      if (state.mode === 'swipe' && !state.items.length) {
+        renderSwipeImport();
+        updateButtons();
+        return;
+      }
 
       if (!state.items.length) {
         stageHint.textContent = 'Load a dataset or add images to begin.';
@@ -764,14 +1007,8 @@
         return;
       }
 
-      if (state.edit.active) {
-        renderEditor();
-        updateButtons();
-        return;
-      }
-
       if (state.currentIndex >= state.items.length) {
-        stageHint.textContent = 'Everything has been reviewed. You can still edit exported data by resetting the deck or downloading the JSON now.';
+        stageHint.textContent = 'Everything has been reviewed. You can reset the deck or download swipe results.';
         stack.innerHTML = `
           <div class="empty-state">
             <div>
@@ -784,7 +1021,7 @@
         return;
       }
 
-      stageHint.textContent = 'Drag the top card, or use the buttons / arrow keys. Press E to edit the crop for the current item.';
+      stageHint.textContent = 'Drag the top card, or use the buttons / arrow keys.';
       const visibleItems = state.items.slice(state.currentIndex, state.currentIndex + 3);
 
       visibleItems.reverse().forEach((item, reverseIndex) => {
@@ -798,6 +1035,222 @@
       updateButtons();
     }
 
+    function renderModeSelection() {
+      stageHint.textContent = 'Choose a mode to begin.';
+      stack.innerHTML = `
+        <div class="empty-state">
+          <div class="mode-grid">
+            <button id="modeSwipeBtn" class="mode-tile" type="button">
+              <h3>Swipe mode</h3>
+              <p>Review images quickly with drag or arrow keys.</p>
+            </button>
+            <button id="modeEditBtn" class="mode-tile" type="button">
+              <h3>Edit mode</h3>
+              <p>Manage set content, metadata, crop, and ordering.</p>
+            </button>
+          </div>
+        </div>
+      `;
+
+      const modeSwipeBtn = document.getElementById('modeSwipeBtn');
+      const modeEditBtn = document.getElementById('modeEditBtn');
+      modeSwipeBtn?.addEventListener('click', () => {
+        state.mode = 'swipe';
+        state.editEntry = 'menu';
+        render();
+      });
+      modeEditBtn?.addEventListener('click', () => {
+        state.mode = 'edit';
+        state.editEntry = 'menu';
+        render();
+      });
+    }
+
+    function renderEditModeEntry() {
+      stageHint.textContent = 'Choose how to start in Edit mode.';
+      stack.innerHTML = `
+        <div class="empty-state">
+          <div class="mode-grid">
+            <button id="editNewSetBtn" class="mode-tile" type="button">
+              <h3>New Set</h3>
+              <p>Start with an empty set and add images manually.</p>
+            </button>
+            <button id="editLoadSetBtn" class="mode-tile" type="button">
+              <h3>Load Set</h3>
+              <p>Load an existing JSON set to edit metadata, crop, and order.</p>
+            </button>
+          </div>
+        </div>
+      `;
+
+      document.getElementById('editNewSetBtn')?.addEventListener('click', () => {
+        state.editEntry = 'active';
+        state.items = [];
+        state.currentIndex = 0;
+        state.decisions = [];
+        exitEditMode(false);
+        statusEl.textContent = 'Started a new empty set.';
+        render();
+      });
+
+      document.getElementById('editLoadSetBtn')?.addEventListener('click', () => {
+        state.editEntry = 'load';
+        render();
+      });
+    }
+
+    function renderSwipeImport() {
+      stageHint.textContent = 'Load a JSON dataset to start swiping.';
+      stack.innerHTML = `
+        <div class="empty-state">
+          <div class="import-shell">
+            <h2>Swipe mode</h2>
+            <p>Choose a JSON file or drag and drop one below.</p>
+            <input id="swipeJsonFile" class="file-input" type="file" accept="application/json,.json" />
+            <div id="swipeJsonDropzone" class="dropzone">
+              <strong>Drag and drop a .json file here</strong>
+              <p class="helper" style="margin:8px 0 0;">Only JSON files are accepted in this step.</p>
+            </div>
+            <div class="button-row" style="justify-content:center;">
+              <button id="backToModeFromImportBtn" class="ghost" type="button">Back to mode selection</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const swipeJsonFile = document.getElementById('swipeJsonFile');
+      const swipeJsonDropzone = document.getElementById('swipeJsonDropzone');
+      const backBtn = document.getElementById('backToModeFromImportBtn');
+
+      swipeJsonFile?.addEventListener('change', async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        await importItemsFromFile(file, 'swipe');
+        event.target.value = '';
+      });
+
+      setupJsonDropzone(swipeJsonDropzone, 'swipe');
+
+      backBtn?.addEventListener('click', resetToModeSelection);
+    }
+
+    function renderEditModeImport() {
+      stageHint.textContent = 'Load a JSON dataset to start editing.';
+      stack.innerHTML = `
+        <div class="empty-state">
+          <div class="import-shell">
+            <h2>Edit mode</h2>
+            <p>Choose a JSON file or drag and drop one below.</p>
+            <input id="editJsonFile" class="file-input" type="file" accept="application/json,.json" />
+            <div id="editJsonDropzone" class="dropzone">
+              <strong>Drag and drop a .json file here</strong>
+              <p class="helper" style="margin:8px 0 0;">Only JSON files are accepted in this step.</p>
+            </div>
+            <div class="button-row" style="justify-content:center;">
+              <button id="backToEditEntryBtn" class="ghost" type="button">Back</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      const editJsonFile = document.getElementById('editJsonFile');
+      const editJsonDropzone = document.getElementById('editJsonDropzone');
+      const backBtn = document.getElementById('backToEditEntryBtn');
+
+      editJsonFile?.addEventListener('change', async (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        await importItemsFromFile(file, 'edit');
+        event.target.value = '';
+      });
+
+      setupJsonDropzone(editJsonDropzone, 'edit');
+
+      backBtn?.addEventListener('click', () => {
+        state.editEntry = 'menu';
+        render();
+      });
+    }
+
+    function renderEditModeWorkspace() {
+      if (!state.items.length) {
+        stageHint.textContent = 'Add images from the left panel to build your set.';
+        stack.innerHTML = `
+          <div class="empty-state">
+            <div>
+              <h2 style="margin-top:0;">No images in this set</h2>
+              <p>Use "Add by image link" or "Add local images" to begin.</p>
+            </div>
+          </div>
+        `;
+        return;
+      }
+
+      stageHint.textContent = 'Use Previous/Next below and Move up/down on the right to reorder the current image.';
+      const item = state.items[state.currentIndex];
+      const card = createCard(item, state.currentIndex, 0, true);
+      stack.appendChild(card);
+    }
+
+    function resetToModeSelection() {
+      state.mode = null;
+      state.editEntry = 'menu';
+      exitEditMode(false);
+      render();
+    }
+
+    function navigateEditItem(delta) {
+      if (state.mode !== 'edit' || state.editEntry !== 'active' || !state.items.length) return;
+      state.currentIndex = clamp(state.currentIndex + delta, 0, state.items.length - 1);
+      render();
+    }
+
+    function moveCurrentItem(delta) {
+      if (state.mode !== 'edit' || state.editEntry !== 'active' || !state.items.length) return;
+      const target = state.currentIndex + delta;
+      if (target < 0 || target >= state.items.length) return;
+
+      const [item] = state.items.splice(state.currentIndex, 1);
+      state.items.splice(target, 0, item);
+      state.currentIndex = target;
+      statusEl.textContent = item.name
+        ? `Moved "${item.name}" ${delta < 0 ? 'up' : 'down'}.`
+        : `Moved current item ${delta < 0 ? 'up' : 'down'}.`;
+      render();
+    }
+
+    function setupJsonDropzone(zoneEl, targetMode) {
+      if (!zoneEl) return;
+
+      ['dragenter', 'dragover'].forEach((type) => {
+        zoneEl.addEventListener(type, (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          zoneEl.classList.add('active');
+        });
+      });
+
+      ['dragleave', 'dragend'].forEach((type) => {
+        zoneEl.addEventListener(type, () => {
+          zoneEl.classList.remove('active');
+        });
+      });
+
+      zoneEl.addEventListener('drop', async (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        zoneEl.classList.remove('active');
+        const file = getJsonFileFromDropEvent(event);
+        if (!file) return;
+        if (!file.name.toLowerCase().endsWith('.json') && file.type !== 'application/json') {
+          statusEl.textContent = 'Only JSON files are allowed in this import step.';
+          return;
+        }
+        await importItemsFromFile(file, targetMode);
+      });
+    }
+
+    // [RENDER] Meta panel prefers draft crop during editing, otherwise persisted item.crop.
     function renderMeta() {
       metaBox.innerHTML = '';
       const item = getActiveItem();
@@ -809,9 +1262,11 @@
       }
 
       const crop = state.edit.active ? state.edit.crop : item.crop;
+      const name = escapeHtml(item.name || '');
+      const location = escapeHtml(item.location || '');
       metaBox.innerHTML = `
         <div class="meta-item">
-          <span><strong>${escapeHtml(item.name || '(untitled)')}</strong><br><small>${escapeHtml(item.location || '(no location)')}</small></span>
+          <span><strong>${name}</strong>${location ? `<br><small>${location}</small>` : ''}</span>
           <span>${activeIndex + 1} / ${state.items.length}</span>
         </div>
         <div class="meta-item">
@@ -821,12 +1276,15 @@
       `;
     }
 
+    // [SWIPE] Only top card is interactive; deeper cards are visual context and marked aria-hidden.
     function createCard(item, index, depth, isTop) {
       const card = document.createElement('div');
       card.className = 'card';
       card.style.transform = `scale(${1 - depth * 0.035}) translateY(${depth * 12}px)`;
       card.style.opacity = String(1 - depth * 0.14);
       card.style.zIndex = String(100 - depth);
+      const displayName = escapeHtml(item.name || '');
+      const displayLocation = escapeHtml(item.location || '');
 
       card.innerHTML = `
         <div class="card-bg">
@@ -839,8 +1297,8 @@
         <div class="badge right">Smash!</div>
         <div class="card-meta">
           <div>
-            <h2 class="title">${escapeHtml(item.name || '(untitled)')}</h2>
-            <p class="location">${escapeHtml(item.location || '(no location)')}</p>
+            <h2 class="title">${displayName}</h2>
+            ${displayLocation ? `<p class="location">${displayLocation}</p>` : ''}
           </div>
           <div class="counter">${index + 1} / ${state.items.length}</div>
         </div>
@@ -856,7 +1314,7 @@
         statusEl.textContent = `Image failed to load: ${item.link}`;
       });
 
-      if (isTop) {
+      if (isTop && state.mode === 'swipe') {
         setupDrag(card, leftBadge, rightBadge);
       } else {
         card.setAttribute('aria-hidden', 'true');
@@ -865,6 +1323,8 @@
       return card;
     }
 
+    // [CROP] Fit crop box into frame by min-scale (contain). Then offset full image so crop aligns to frame.
+    // [CROP] Using natural image dimensions keeps export coordinates stable across viewport sizes.
     function applyCrop(img, frame, crop) {
       const frameRect = frame.getBoundingClientRect();
       const frameW = frameRect.width || 520;
@@ -884,6 +1344,8 @@
       img.style.top = `${offsetY - crop.y * scale}px`;
     }
 
+    // [SWIPE] Pointer capture keeps drag stable even if pointer leaves card bounds mid-gesture.
+    // [SWIPE] Horizontal delta controls rotation and badge opacity; release threshold decides commit vs snap-back.
     function setupDrag(card, leftBadge, rightBadge) {
       card.addEventListener('pointerdown', (event) => {
         state.drag.active = true;
@@ -929,6 +1391,7 @@
       card.addEventListener('pointercancel', endDrag);
     }
 
+    // [SWIPE] Visual exit animation is decoupled from state mutation; decision is recorded after timeout.
     function animateOut(card, direction) {
       const offset = direction === 'right' ? window.innerWidth : -window.innerWidth;
       card.style.transform = `translate(${offset}px, 40px) rotate(${direction === 'right' ? 24 : -24}deg)`;
@@ -939,13 +1402,16 @@
       }, 220);
     }
 
+    // [SWIPE] Button/keyboard path reuses the same animation/decision flow as drag for consistent behavior.
     function commitSwipe(direction) {
+      if (state.mode !== 'swipe') return;
       if (state.edit.active) return;
       const card = stack.querySelector('.card');
       if (!card) return;
       animateOut(card, direction);
     }
 
+    // [SWIPE] Decision snapshot copies current item and appends timestamp for audit/export.
     function recordDecision(direction) {
       const item = state.items[state.currentIndex];
       state.decisions.push({
@@ -955,7 +1421,9 @@
       });
 
       state.currentIndex += 1;
-      statusEl.textContent = `Marked "${item.name || '(untitled)'}" as ${direction === 'right' ? 'keep' : 'reject'}.`;
+      statusEl.textContent = item.name
+        ? `Marked "${item.name}" as ${direction === 'right' ? 'keep' : 'reject'}.`
+        : `Marked current item as ${direction === 'right' ? 'keep' : 'reject'}.`;
       render();
     }
 
@@ -963,13 +1431,19 @@
       const index = getActiveItemIndex();
       if (index == null) return;
       const item = state.items[index];
-      item.name = nameInput.value.trim();
-      item.location = locationInput.value.trim();
-      statusEl.textContent = `Saved details for "${item.name || '(untitled)'}".`;
+      const nextName = nameInput.value.trim();
+      const nextLocation = locationInput.value.trim();
+      if (item.name === nextName && item.location === nextLocation) return;
+
+      item.name = nextName;
+      item.location = nextLocation;
+      statusEl.textContent = item.name ? `Saved details for "${item.name}".` : 'Saved item details.';
       render();
     }
 
+    // [CROP] Entering edit mode clones item.crop into draft state so cancel can discard all intermediate changes.
     function enterCropEditMode() {
+      if (state.mode !== 'edit' || state.editEntry !== 'active') return;
       if (!state.items.length || state.currentIndex >= state.items.length) return;
       const item = state.items[state.currentIndex];
       state.edit.active = true;
@@ -980,17 +1454,19 @@
       state.edit.selectionEl = null;
       state.edit.pointerId = null;
       state.edit.interaction = null;
-      statusEl.textContent = `Editing crop for "${item.name || '(untitled)'}".`;
+      statusEl.textContent = item.name ? `Editing crop for "${item.name}".` : 'Editing crop for current item.';
       render();
     }
 
+    // [CROP] Persist draft crop only on save; normalize first to enforce integer/min-size invariants.
     function saveCrop() {
       if (!state.edit.active || state.edit.itemIndex == null || !state.edit.crop) return;
       const item = state.items[state.edit.itemIndex];
       item.crop = normalizeCrop(state.edit.crop);
-      const name = item.name || '(untitled)';
       exitEditMode(true);
-      statusEl.textContent = `Saved crop for "${name}". Download the updated JSON when you're ready.`;
+      statusEl.textContent = item.name
+        ? `Saved crop for "${item.name}". Download the updated JSON when you're ready.`
+        : 'Saved crop. Download the updated JSON when you\'re ready.';
       render();
     }
 
@@ -998,10 +1474,11 @@
       if (!state.edit.active) return;
       const item = state.items[state.edit.itemIndex];
       exitEditMode(true);
-      statusEl.textContent = `Canceled crop editing for "${item?.name || '(untitled)'}".`;
+      statusEl.textContent = item?.name ? `Canceled crop editing for "${item.name}".` : 'Canceled crop editing.';
       render();
     }
 
+    // [CROP] Exit routine clears transient editor pointers to avoid stale DOM references after rerender.
     function exitEditMode(keepIndex) {
       const current = keepIndex ? state.currentIndex : 0;
       state.edit.active = false;
@@ -1015,8 +1492,10 @@
       state.currentIndex = current;
     }
 
+    // [CROP] Editor always works in source-image pixels; overlay visuals are derived from these values.
     function renderEditor() {
       const item = state.items[state.edit.itemIndex];
+      const subtitleParts = [item.name || '', item.location || ''].filter(Boolean);
       stageHint.textContent = 'Drag inside the box to move it. Drag the corners to resize it. Save crop to write the new coordinates back into the JSON data.';
 
       stack.innerHTML = `
@@ -1024,7 +1503,7 @@
           <div class="editor-header">
             <div>
               <h2>Edit crop</h2>
-              <p class="editor-subtitle">${escapeHtml(item.name || '(untitled)')} — ${escapeHtml(item.location || '(no location)')}</p>
+              <p class="editor-subtitle">${escapeHtml(subtitleParts.join(' — '))}</p>
             </div>
             <div class="counter">${state.edit.itemIndex + 1} / ${state.items.length}</div>
           </div>
@@ -1062,6 +1541,8 @@
         statusEl.textContent = `Image failed to load: ${item.link}`;
       });
 
+      // [CROP] Interaction modes: draw (new box), move (translate), resize-* (anchor opposite corner).
+      // [CROP] Each pointer move updates draft crop, then mirrors it back into overlay coordinates.
       setupEditorInteractions();
       if (imageEl.complete && imageEl.naturalWidth > 0) {
         clampCropToImage();
@@ -1125,6 +1606,8 @@
       renderMeta();
     }
 
+    // [CROP] Convert rendered pixels -> natural image pixels via proportional mapping and clamp to image bounds.
+    // [CROP] Rounding keeps exported crop integer-based and prevents floating-point drift while dragging.
     function pointerToImagePixels(event) {
       const imageEl = state.edit.imageEl;
       if (!imageEl || !imageEl.naturalWidth || !imageEl.naturalHeight) return null;
@@ -1137,6 +1620,7 @@
       };
     }
 
+    // [CROP] Resize math preserves the opposite edge/corner and enforces MIN_CROP_SIZE via clamped bounds.
     function updateCropFromInteraction(point) {
       const interaction = state.edit.interaction;
       const start = interaction.startCrop;
@@ -1209,6 +1693,7 @@
       state.edit.crop = normalizeCrop(next);
     }
 
+    // [CROP] Final guardrail: crop rectangle is forced fully inside natural image dimensions.
     function clampCropToImage() {
       const imageEl = state.edit.imageEl;
       if (!imageEl || !imageEl.naturalWidth || !imageEl.naturalHeight || !state.edit.crop) return;
@@ -1222,6 +1707,7 @@
       state.edit.crop = crop;
     }
 
+    // [CROP] Project current natural-pixel crop into rendered overlay dimensions for live feedback.
     function updateEditorSelection() {
       const imageEl = state.edit.imageEl;
       const selectionEl = state.edit.selectionEl;
@@ -1244,6 +1730,7 @@
     }
 
     function resetDeck() {
+      if (state.mode !== 'swipe') return;
       state.currentIndex = 0;
       state.decisions = [];
       exitEditMode(true);
@@ -1253,6 +1740,7 @@
       render();
     }
 
+    // [ADD] Resolve dimensions first so inserted items start with a full-image crop (x/y=0, width/height=natural).
     async function handleAddLink() {
       const link = linkInput.value.trim();
       if (!link) {
@@ -1288,6 +1776,7 @@
       imageFiles.value = '';
     }
 
+    // [ADD] Local files become data URLs, allowing exported JSON to be portable without external hosting.
     async function addLocalFiles(files) {
       try {
         const imageOnly = files.filter((file) => file.type.startsWith('image/'));
@@ -1339,6 +1828,7 @@
       });
     }
 
+    // [ADD] If user already finished the deck, keep new items reachable by rewinding currentIndex to new block.
     function insertNewItems(newItems) {
       if (!newItems.length) return;
 
@@ -1349,7 +1839,14 @@
         return;
       }
 
+      const insertStartIndex = state.items.length;
       state.items.push(...newItems);
+
+      if (state.mode === 'edit' && state.editEntry === 'active') {
+        state.currentIndex = insertStartIndex;
+        return;
+      }
+
       if (state.currentIndex >= state.items.length - newItems.length) {
         state.currentIndex = Math.max(0, state.items.length - newItems.length);
       }
@@ -1383,6 +1880,7 @@
       });
     }
 
+    // [RENDER] Show recent decisions in reverse chronological order (latest first), capped for compactness.
     function renderResults() {
       resultsEl.innerHTML = '';
       if (!state.decisions.length) {
@@ -1393,10 +1891,12 @@
       [...state.decisions].reverse().slice(0, 8).forEach((entry) => {
         const row = document.createElement('div');
         row.className = 'results-item';
+        const name = escapeHtml(entry.name || '');
+        const location = escapeHtml(entry.location || '');
         row.innerHTML = `
           <div>
-            <strong>${escapeHtml(entry.name || '(untitled)')}</strong><br>
-            <small>${escapeHtml(entry.location || '(no location)')}</small>
+            <strong>${name}</strong>
+            ${location ? `<br><small>${location}</small>` : ''}
           </div>
           <strong>${entry.decision === 'keep' ? 'Keep' : 'Reject'}</strong>
         `;
@@ -1404,6 +1904,7 @@
       });
     }
 
+    // [EXPORT] Serialize current in-memory state into downloadable JSON without server roundtrip.
     function downloadData() {
       const exportItems = state.items.map((item) => ({
         link: item.link,
@@ -1422,6 +1923,7 @@
       statusEl.textContent = 'Downloaded the updated JSON file.';
     }
 
+    // [EXPORT] Results export keeps historical decisions (including reviewedAt timestamp) for post-processing.
     function downloadResults() {
       const blob = new Blob([JSON.stringify(state.decisions, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
@@ -1433,6 +1935,7 @@
       statusEl.textContent = 'Downloaded swipe results.';
     }
 
+    // [UTIL] Invariant helper: non-negative integer coordinates + minimum width/height.
     function normalizeCrop(crop) {
       return {
         x: Math.max(0, Math.round(crop.x)),
@@ -1465,6 +1968,7 @@
       }
     }
 
+    // [UTIL] Required before injecting dynamic values into template literals rendered as HTML.
     function escapeHtml(value) {
       return String(value)
         .replaceAll('&', '&amp;')
@@ -1476,6 +1980,14 @@
 
     function escapeAttribute(value) {
       return escapeHtml(value);
+    }
+
+    function getJsonFileFromDropEvent(event) {
+      const files = Array.from(event.dataTransfer?.files || []);
+      return files.find((file) => {
+        const name = String(file.name || '').toLowerCase();
+        return name.endsWith('.json') || file.type === 'application/json';
+      }) || null;
     }
   </script>
 </body>
