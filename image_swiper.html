@@ -315,6 +315,13 @@
       align-items: end;
     }
 
+    .card-side {
+      display: grid;
+      gap: 6px;
+      justify-items: end;
+      text-align: right;
+    }
+
     .title {
       font-size: 1.9rem;
       font-weight: 800;
@@ -335,6 +342,14 @@
       color: #e2e8f0;
       border: 1px solid rgba(255,255,255,0.12);
       white-space: nowrap;
+    }
+
+    .source-label {
+      margin: 0;
+      color: #e2e8f0;
+      font-size: 0.92rem;
+      max-width: 220px;
+      overflow-wrap: anywhere;
     }
 
     .empty-state, .editor-shell {
@@ -529,6 +544,44 @@
       align-self: center;
     }
 
+    .confirm-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 1200;
+      background: rgba(2, 6, 23, 0.72);
+      display: grid;
+      place-items: center;
+      padding: 20px;
+    }
+
+    .confirm-overlay[hidden] {
+      display: none !important;
+    }
+
+    .confirm-dialog {
+      width: min(520px, 100%);
+      background: rgba(17, 24, 39, 0.96);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 20px;
+      box-shadow: var(--shadow);
+      padding: 18px;
+      display: grid;
+      gap: 12px;
+    }
+
+    .confirm-dialog h3,
+    .confirm-dialog p {
+      margin: 0;
+    }
+
+    .confirm-checkbox {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #e2e8f0;
+      font-size: 0.95rem;
+    }
+
     @media (max-width: 1080px) {
       .app { grid-template-columns: 1fr; }
       .app.sidebar-collapsed { grid-template-columns: 1fr; }
@@ -579,10 +632,12 @@
           <input id="nameInput" class="text-input" type="text" placeholder="Name" disabled />
           <input id="locationInput" class="text-input" type="text" placeholder="Location" disabled />
         </div>
+        <input id="sourceInput" class="text-input" type="text" placeholder="Source" disabled />
         <div class="button-row">
           <button id="editCropBtn" class="info" disabled>Edit crop</button>
           <button id="saveCropBtn" class="warn" disabled>Save crop</button>
           <button id="cancelCropBtn" class="ghost" disabled>Cancel crop</button>
+          <button id="deleteItemBtn" class="danger" disabled>Delete image</button>
         </div>
         <div id="metaBox" class="meta-box"></div>
       </div>
@@ -594,6 +649,7 @@
           <input id="newNameInput" class="text-input" type="text" placeholder="Optional name" />
           <input id="newLocationInput" class="text-input" type="text" placeholder="Optional location" />
         </div>
+        <input id="newSourceInput" class="text-input" type="text" placeholder="Optional source" />
         <div class="button-row">
           <button id="addLinkBtn" class="primary">Add from link</button>
         </div>
@@ -624,7 +680,8 @@
     "link": "https://example.com/image-1.jpg",
     "crop": { "x": 120, "y": 80, "width": 900, "height": 1200 },
     "name": "Example Place",
-    "location": "Berlin, Germany"
+    "location": "Berlin, Germany",
+    "source": "City archive"
   }
 ]</pre>
       </div>
@@ -664,8 +721,24 @@
     </section>
   </div>
 
+  <div id="deleteConfirmOverlay" class="confirm-overlay" hidden>
+    <div class="confirm-dialog" role="dialog" aria-modal="true" aria-labelledby="deleteConfirmTitle">
+      <h3 id="deleteConfirmTitle">Delete current image?</h3>
+      <p id="deleteConfirmText">This action cannot be undone.</p>
+      <label class="confirm-checkbox" for="deleteDontAskAgainInput">
+        <input id="deleteDontAskAgainInput" type="checkbox" />
+        Don&#39;t ask again
+      </label>
+      <div class="button-row" style="justify-content:flex-end;">
+        <button id="deleteConfirmCancelBtn" class="ghost" type="button">Cancel</button>
+        <button id="deleteConfirmBtn" class="danger" type="button">Delete</button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const MIN_CROP_SIZE = 20;
+    const DELETE_CONFIRM_PREF_KEY = 'imageSwiper.confirmDelete';
 
     // [STATE] Single source of truth: persistent data + transient pointer/editor interaction state.
     const state = {
@@ -691,7 +764,11 @@
         selectionEl: null,
         pointerId: null,
         interaction: null
-      }
+      },
+      preferences: {
+        confirmDelete: loadDeleteConfirmPreference()
+      },
+      pendingDeleteIndex: null
     };
 
     // [DOM] Cache frequently used elements once; render handlers mutate these nodes directly.
@@ -706,14 +783,17 @@
     const editCropBtn = document.getElementById('editCropBtn');
     const saveCropBtn = document.getElementById('saveCropBtn');
     const cancelCropBtn = document.getElementById('cancelCropBtn');
+    const deleteItemBtn = document.getElementById('deleteItemBtn');
     const resetBtn = document.getElementById('resetBtn');
     const downloadDataBtn = document.getElementById('downloadDataBtn');
     const downloadResultsBtn = document.getElementById('downloadResultsBtn');
     const nameInput = document.getElementById('nameInput');
     const locationInput = document.getElementById('locationInput');
+    const sourceInput = document.getElementById('sourceInput');
     const linkInput = document.getElementById('linkInput');
     const newNameInput = document.getElementById('newNameInput');
     const newLocationInput = document.getElementById('newLocationInput');
+    const newSourceInput = document.getElementById('newSourceInput');
     const addLinkBtn = document.getElementById('addLinkBtn');
     const imageFiles = document.getElementById('imageFiles');
     const dropzone = document.getElementById('dropzone');
@@ -735,6 +815,11 @@
     const nextItemBtn = document.getElementById('nextItemBtn');
     const moveUpBtn = document.getElementById('moveUpBtn');
     const moveDownBtn = document.getElementById('moveDownBtn');
+    const deleteConfirmOverlay = document.getElementById('deleteConfirmOverlay');
+    const deleteConfirmText = document.getElementById('deleteConfirmText');
+    const deleteDontAskAgainInput = document.getElementById('deleteDontAskAgainInput');
+    const deleteConfirmBtn = document.getElementById('deleteConfirmBtn');
+    const deleteConfirmCancelBtn = document.getElementById('deleteConfirmCancelBtn');
 
     // [EVENTS] UI events only mutate state through functions, then UI is reconciled via render().
     jsonFile.addEventListener('change', handleJsonFile);
@@ -743,6 +828,7 @@
     editCropBtn.addEventListener('click', enterCropEditMode);
     saveCropBtn.addEventListener('click', saveCrop);
     cancelCropBtn.addEventListener('click', cancelCropEdit);
+    deleteItemBtn.addEventListener('click', requestDeleteCurrentItem);
     resetBtn.addEventListener('click', resetDeck);
     downloadDataBtn.addEventListener('click', downloadData);
     downloadResultsBtn.addEventListener('click', downloadResults);
@@ -750,7 +836,8 @@
     imageFiles.addEventListener('change', handleLocalFilesSelection);
     nameInput.addEventListener('blur', saveCurrentDetails);
     locationInput.addEventListener('blur', saveCurrentDetails);
-    [nameInput, locationInput].forEach((input) => {
+    sourceInput.addEventListener('blur', saveCurrentDetails);
+    [nameInput, locationInput, sourceInput].forEach((input) => {
       input.addEventListener('keydown', (event) => {
         if (event.key !== 'Enter') return;
         event.preventDefault();
@@ -762,6 +849,11 @@
     nextItemBtn.addEventListener('click', () => navigateEditItem(1));
     moveUpBtn.addEventListener('click', () => moveCurrentItem(-1));
     moveDownBtn.addEventListener('click', () => moveCurrentItem(1));
+    deleteConfirmBtn.addEventListener('click', confirmDeleteCurrentItem);
+    deleteConfirmCancelBtn.addEventListener('click', () => closeDeleteConfirm(false));
+    deleteConfirmOverlay.addEventListener('click', (event) => {
+      if (event.target === deleteConfirmOverlay) closeDeleteConfirm(false);
+    });
     window.addEventListener('resize', () => {
       if (state.edit.active) updateEditorSelection();
     });
@@ -822,6 +914,7 @@
         if (typeof item.link !== 'string' || !item.link.trim()) throw new Error(`Item ${index} is missing a valid "link".`);
         if (typeof item.name !== 'string') throw new Error(`Item ${index} is missing a valid "name".`);
         if (typeof item.location !== 'string') throw new Error(`Item ${index} is missing a valid "location".`);
+        if ('source' in item && typeof item.source !== 'string') throw new Error(`Item ${index} is missing a valid "source".`);
         if (!item.crop || typeof item.crop !== 'object') throw new Error(`Item ${index} is missing a valid "crop" object.`);
         ['x', 'y', 'width', 'height'].forEach((key) => {
           if (typeof item.crop[key] !== 'number' || Number.isNaN(item.crop[key])) {
@@ -836,7 +929,8 @@
         link: item.link,
         crop: normalizeCrop(item.crop),
         name: String(item.name ?? ''),
-        location: String(item.location ?? '')
+        location: String(item.location ?? ''),
+        source: String(item.source ?? '')
       };
     }
 
@@ -864,11 +958,13 @@
       editCropBtn.disabled = !editRuntime || !hasActiveItem || editing;
       saveCropBtn.disabled = !editRuntime || !editing;
       cancelCropBtn.disabled = !editRuntime || !editing;
+      deleteItemBtn.disabled = !editRuntime || !hasActiveItem || editing;
       resetBtn.disabled = !swipeRuntime || !hasItems;
       downloadDataBtn.disabled = !editRuntime || !hasItems;
       downloadResultsBtn.disabled = !swipeRuntime || !state.decisions.length;
       nameInput.disabled = !editRuntime || !hasActiveItem;
       locationInput.disabled = !editRuntime || !hasActiveItem;
+      sourceInput.disabled = !editRuntime || !hasActiveItem;
 
       prevItemBtn.disabled = !editRuntime || !hasItems || state.currentIndex <= 0;
       nextItemBtn.disabled = !editRuntime || !hasItems || state.currentIndex >= state.items.length - 1;
@@ -943,10 +1039,12 @@
       if (!item) {
         nameInput.value = '';
         locationInput.value = '';
+        sourceInput.value = '';
         return;
       }
       nameInput.value = item.name;
       locationInput.value = item.location;
+      sourceInput.value = item.source || '';
     }
 
     // [RENDER] Branch order matters: empty -> editor -> finished -> swipe stack (mutually exclusive views).
@@ -1219,6 +1317,62 @@
       render();
     }
 
+    function requestDeleteCurrentItem() {
+      if (state.mode !== 'edit' || state.editEntry !== 'active' || state.edit.active) return;
+      const index = getActiveItemIndex();
+      if (index == null) return;
+
+      if (!state.preferences.confirmDelete) {
+        deleteItemAtIndex(index);
+        return;
+      }
+
+      state.pendingDeleteIndex = index;
+      const item = state.items[index];
+      const label = item?.name || `item ${index + 1}`;
+      deleteConfirmText.textContent = `Delete ${label}? This action cannot be undone.`;
+      deleteDontAskAgainInput.checked = false;
+      deleteConfirmOverlay.hidden = false;
+    }
+
+    function closeDeleteConfirm(resetPending = true) {
+      deleteConfirmOverlay.hidden = true;
+      deleteDontAskAgainInput.checked = false;
+      if (resetPending) state.pendingDeleteIndex = null;
+    }
+
+    function confirmDeleteCurrentItem() {
+      const index = state.pendingDeleteIndex;
+      if (index == null) {
+        closeDeleteConfirm(true);
+        return;
+      }
+
+      if (deleteDontAskAgainInput.checked) {
+        state.preferences.confirmDelete = false;
+        saveDeleteConfirmPreference(false);
+      }
+
+      closeDeleteConfirm(false);
+      deleteItemAtIndex(index);
+      state.pendingDeleteIndex = null;
+    }
+
+    function deleteItemAtIndex(index) {
+      if (index < 0 || index >= state.items.length) return;
+      const [removed] = state.items.splice(index, 1);
+      if (!state.items.length) {
+        state.currentIndex = 0;
+      } else {
+        state.currentIndex = clamp(index, 0, state.items.length - 1);
+      }
+
+      statusEl.textContent = removed?.name
+        ? `Deleted "${removed.name}".`
+        : 'Deleted current image.';
+      render();
+    }
+
     function setupJsonDropzone(zoneEl, targetMode) {
       if (!zoneEl) return;
 
@@ -1285,6 +1439,7 @@
       card.style.zIndex = String(100 - depth);
       const displayName = escapeHtml(item.name || '');
       const displayLocation = escapeHtml(item.location || '');
+      const displaySource = escapeHtml(item.source || '');
 
       card.innerHTML = `
         <div class="card-bg">
@@ -1300,7 +1455,10 @@
             <h2 class="title">${displayName}</h2>
             ${displayLocation ? `<p class="location">${displayLocation}</p>` : ''}
           </div>
-          <div class="counter">${index + 1} / ${state.items.length}</div>
+          <div class="card-side">
+            <div class="counter">${index + 1} / ${state.items.length}</div>
+            ${displaySource ? `<p class="source-label">${displaySource}</p>` : ''}
+          </div>
         </div>
       `;
 
@@ -1433,10 +1591,12 @@
       const item = state.items[index];
       const nextName = nameInput.value.trim();
       const nextLocation = locationInput.value.trim();
-      if (item.name === nextName && item.location === nextLocation) return;
+      const nextSource = sourceInput.value.trim();
+      if (item.name === nextName && item.location === nextLocation && (item.source || '') === nextSource) return;
 
       item.name = nextName;
       item.location = nextLocation;
+      item.source = nextSource;
       statusEl.textContent = item.name ? `Saved details for "${item.name}".` : 'Saved item details.';
       render();
     }
@@ -1753,12 +1913,14 @@
         const item = await createItemFromSource(
           link,
           newNameInput.value.trim() || guessNameFromPath(link) || 'Untitled image',
-          newLocationInput.value.trim()
+          newLocationInput.value.trim(),
+          newSourceInput.value.trim()
         );
         insertNewItems([item]);
         linkInput.value = '';
         newNameInput.value = '';
         newLocationInput.value = '';
+        newSourceInput.value = '';
         statusEl.textContent = `Added "${item.name}" from link.`;
         render();
       } catch (error) {
@@ -1852,13 +2014,14 @@
       }
     }
 
-    async function createItemFromSource(src, name, location) {
+    async function createItemFromSource(src, name, location, source = '') {
       const { width, height } = await getImageDimensions(src);
       return {
         link: src,
         crop: { x: 0, y: 0, width, height },
         name: name || 'Untitled image',
-        location: location || ''
+        location: location || '',
+        source: source || ''
       };
     }
 
@@ -1910,7 +2073,8 @@
         link: item.link,
         crop: normalizeCrop(item.crop),
         name: item.name,
-        location: item.location
+        location: item.location,
+        source: item.source
       }));
 
       const blob = new Blob([JSON.stringify(exportItems, null, 2)], { type: 'application/json' });
@@ -1988,6 +2152,24 @@
         const name = String(file.name || '').toLowerCase();
         return name.endsWith('.json') || file.type === 'application/json';
       }) || null;
+    }
+
+    function loadDeleteConfirmPreference() {
+      try {
+        const stored = window.localStorage.getItem(DELETE_CONFIRM_PREF_KEY);
+        if (stored == null) return true;
+        return stored !== 'false';
+      } catch {
+        return true;
+      }
+    }
+
+    function saveDeleteConfirmPreference(value) {
+      try {
+        window.localStorage.setItem(DELETE_CONFIRM_PREF_KEY, value ? 'true' : 'false');
+      } catch {
+        // Ignore storage errors and keep runtime preference only.
+      }
     }
   </script>
 </body>
