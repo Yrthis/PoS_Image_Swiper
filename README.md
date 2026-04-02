@@ -6,13 +6,16 @@ Right now this is a **proof of concept** of a tinder style image swiper for smas
 To test it 
 - download the image_swiper.html and the DS1_SoP.json
 - open the image_swiper.html in a browser
-- Click on the 'Choose File' on the left side and select the DS1_SoP.json![Swiper](https://github.com/user-attachments/assets/a4c919a8-94d3-4543-945f-70ac06bd05c7)
+- Choose 'Swipe mode'
+- Use the file picker to select or drop the DS1_SoP.json into the drag and drop field
+
+ ![Swiper](https://github.com/user-attachments/assets/a4c919a8-94d3-4543-945f-70ac06bd05c7) 
   
   
   
 ### Todo
 - [ ] Resize dynamically
-- [ ] Split Swipe mode and Edit mode  
+- [x] Split Swipe mode and Edit mode  
 - [ ] Define clear workflows  
 - [ ] Implement clear workflows
 - [ ] Add a source field to the .json format to display the image origin.
